@@ -87,6 +87,40 @@ function konderntang_save_settings() {
     $header_show_search = isset( $_POST['header_show_search'] ) ? '1' : '0';
     set_theme_mod( 'header_show_search', $header_show_search );
     
+    // Geo-Location Detection Settings
+    $geo_location_enabled = isset( $_POST['geo_location_enabled'] ) ? '1' : '0';
+    set_theme_mod( 'geo_location_enabled', $geo_location_enabled );
+    
+    if ( isset( $_POST['geo_location_default_lang'] ) ) {
+        $default_lang = sanitize_text_field( $_POST['geo_location_default_lang'] );
+        set_theme_mod( 'geo_location_default_lang', $default_lang );
+    }
+    
+    $geo_location_auto_redirect = isset( $_POST['geo_location_auto_redirect'] ) ? '1' : '0';
+    set_theme_mod( 'geo_location_auto_redirect', $geo_location_auto_redirect );
+    
+    $geo_location_show_modal = isset( $_POST['geo_location_show_modal'] ) ? '1' : '0';
+    set_theme_mod( 'geo_location_show_modal', $geo_location_show_modal );
+    
+    // Language Switcher Settings
+    if ( isset( $_POST['language_switcher_style'] ) ) {
+        $switcher_style = sanitize_text_field( $_POST['language_switcher_style'] );
+        if ( in_array( $switcher_style, array( 'dropdown', 'modal' ), true ) ) {
+            set_theme_mod( 'language_switcher_style', $switcher_style );
+        }
+    }
+    
+    $language_switcher_show_flags = isset( $_POST['language_switcher_show_flags'] ) ? '1' : '0';
+    set_theme_mod( 'language_switcher_show_flags', $language_switcher_show_flags );
+    
+    $language_switcher_show_search = isset( $_POST['language_switcher_show_search'] ) ? '1' : '0';
+    set_theme_mod( 'language_switcher_show_search', $language_switcher_show_search );
+    
+    if ( isset( $_POST['language_switcher_modal_title'] ) ) {
+        $modal_title = sanitize_text_field( $_POST['language_switcher_modal_title'] );
+        set_theme_mod( 'language_switcher_modal_title', $modal_title );
+    }
+    
     // Footer Settings
     if ( isset( $_POST['footer_layout'] ) ) {
         $footer_layout = absint( $_POST['footer_layout'] );
@@ -402,6 +436,30 @@ function konderntang_settings_page_render() {
     // Get current settings
     $logo_fallback_image = konderntang_get_option( 'logo_fallback_image', '' );
     $header_show_search = konderntang_get_option( 'header_show_search', true );
+    
+    // Geo-Location Detection Settings
+    $geo_location_enabled = konderntang_get_option( 'geo_location_enabled', false );
+    $geo_location_default_lang = konderntang_get_option( 'geo_location_default_lang', '' );
+    $geo_location_auto_redirect = konderntang_get_option( 'geo_location_auto_redirect', false );
+    $geo_location_show_modal = konderntang_get_option( 'geo_location_show_modal', true );
+    
+    // Language Switcher Settings
+    $language_switcher_style = konderntang_get_option( 'language_switcher_style', 'dropdown' );
+    $language_switcher_show_flags = konderntang_get_option( 'language_switcher_show_flags', true );
+    $language_switcher_show_search = konderntang_get_option( 'language_switcher_show_search', false );
+    $language_switcher_modal_title = konderntang_get_option( 'language_switcher_modal_title', esc_html__( 'เลือกภาษา', 'konderntang' ) );
+    
+    // Get Polylang languages if available
+    $polylang_languages = array();
+    if ( function_exists( 'pll_the_languages' ) ) {
+        $polylang_languages_raw = pll_the_languages( array( 'raw' => 1 ) );
+        if ( is_array( $polylang_languages_raw ) ) {
+            foreach ( $polylang_languages_raw as $lang ) {
+                $polylang_languages[ $lang['slug'] ] = $lang['name'];
+            }
+        }
+    }
+    
     $footer_layout = konderntang_get_option( 'footer_layout', '0' );
     $footer_copyright_text = konderntang_get_option( 'footer_copyright_text', sprintf( esc_html__( '&copy; %1$s %2$s - %3$s', 'konderntang' ), date( 'Y' ), get_bloginfo( 'name' ), esc_html__( 'เพื่อนเดินทางของคุณ', 'konderntang' ) ) );
     $cookie_consent_enabled = konderntang_get_option( 'cookie_consent_enabled', true );
@@ -614,6 +672,213 @@ function konderntang_settings_page_render() {
                                         <p class="description">
                                             <?php esc_html_e( 'แสดงปุ่มค้นหาในส่วน header navigation', 'konderntang' ); ?>
                                         </p>
+                        </td>
+                    </tr>
+                    
+                    <?php 
+                    // Check if Polylang is active
+                    $polylang_active = function_exists( 'pll_the_languages' );
+                    $polylang_has_languages = $polylang_active && ! empty( $polylang_languages ) && count( $polylang_languages ) >= 2;
+                    ?>
+                    
+                    <!-- Polylang Status Notice -->
+                    <?php if ( ! $polylang_active ) : ?>
+                    <tr>
+                        <th scope="row">
+                            <span class="dashicons dashicons-warning" style="color: #d63638;"></span>
+                            <?php esc_html_e( 'Polylang Required', 'konderntang' ); ?>
+                        </th>
+                        <td>
+                            <div class="notice notice-error inline" style="margin: 0; padding: 10px 15px;">
+                                <p>
+                                    <strong><?php esc_html_e( 'Polylang plugin is not installed or activated.', 'konderntang' ); ?></strong>
+                                </p>
+                                <p>
+                                    <?php esc_html_e( 'ฟีเจอร์ Geo-Location Detection และ Language Switcher ต้องการปลั๊กอิน Polylang เพื่อทำงานได้', 'konderntang' ); ?>
+                                </p>
+                                <p>
+                                    <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=polylang&tab=search&type=term' ) ); ?>" class="button button-primary">
+                                        <span class="dashicons dashicons-download" style="vertical-align: middle; margin-right: 5px;"></span>
+                                        <?php esc_html_e( 'Install Polylang', 'konderntang' ); ?>
+                                    </a>
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php elseif ( ! $polylang_has_languages ) : ?>
+                    <tr>
+                        <th scope="row">
+                            <span class="dashicons dashicons-info" style="color: #dba617;"></span>
+                            <?php esc_html_e( 'Languages Required', 'konderntang' ); ?>
+                        </th>
+                        <td>
+                            <div class="notice notice-warning inline" style="margin: 0; padding: 10px 15px;">
+                                <p>
+                                    <strong><?php esc_html_e( 'Polylang is installed but no languages are configured.', 'konderntang' ); ?></strong>
+                                </p>
+                                <p>
+                                    <?php esc_html_e( 'กรุณาตั้งค่าภาษาอย่างน้อย 2 ภาษาใน Polylang เพื่อใช้งานฟีเจอร์ Language Switcher', 'konderntang' ); ?>
+                                </p>
+                                <p>
+                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=mlang' ) ); ?>" class="button button-primary">
+                                        <span class="dashicons dashicons-translation" style="vertical-align: middle; margin-right: 5px;"></span>
+                                        <?php esc_html_e( 'Configure Languages', 'konderntang' ); ?>
+                                    </a>
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endif; ?>
+                    
+                    <!-- Geo-Location Detection -->
+                    <tr>
+                        <th scope="row">
+                            <span class="dashicons dashicons-location"></span>
+                            <?php esc_html_e( 'Geo-Location Detection', 'konderntang' ); ?>
+                        </th>
+                        <td>
+                            <?php if ( ! $polylang_has_languages ) : ?>
+                                <label class="konderntang-toggle" style="opacity: 0.5; pointer-events: none;">
+                                    <input type="checkbox" name="geo_location_enabled" value="1" disabled />
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label"><?php esc_html_e( 'Enable Geo-Location Detection', 'konderntang' ); ?></span>
+                                </label>
+                                <p class="description" style="color: #d63638;">
+                                    <?php esc_html_e( '⚠️ ต้องติดตั้ง Polylang และตั้งค่าอย่างน้อย 2 ภาษาก่อนจึงจะใช้งานได้', 'konderntang' ); ?>
+                                </p>
+                            <?php else : ?>
+                                <label class="konderntang-toggle">
+                                    <input type="checkbox" name="geo_location_enabled" value="1" <?php checked( $geo_location_enabled, true ); ?> />
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label"><?php esc_html_e( 'Enable Geo-Location Detection', 'konderntang' ); ?></span>
+                                </label>
+                                <p class="description">
+                                    <?php esc_html_e( 'ตรวจสอบประเทศของผู้ใช้และแนะนำภาษาที่เหมาะสม', 'konderntang' ); ?>
+                                </p>
+                                
+                                <?php if ( $geo_location_enabled ) : ?>
+                                    <div style="margin-top: 15px; padding-left: 30px; border-left: 3px solid #2271b1; background: #f6f7f7; padding: 15px 15px 15px 30px; border-radius: 0 4px 4px 0;">
+                                        <p>
+                                            <label for="geo_location_default_lang">
+                                                <strong><?php esc_html_e( 'Default Language:', 'konderntang' ); ?></strong>
+                                            </label>
+                                            <select name="geo_location_default_lang" id="geo_location_default_lang" style="margin-left: 10px;">
+                                                <option value=""><?php esc_html_e( '-- Select --', 'konderntang' ); ?></option>
+                                                <?php foreach ( $polylang_languages as $lang_code => $lang_name ) : ?>
+                                                    <option value="<?php echo esc_attr( $lang_code ); ?>" <?php selected( $geo_location_default_lang, $lang_code ); ?>>
+                                                        <?php echo esc_html( $lang_name ); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <span class="description" style="display: block; margin-top: 5px;">
+                                                <?php esc_html_e( 'ภาษาที่จะใช้เมื่อไม่สามารถตรวจจับประเทศได้', 'konderntang' ); ?>
+                                            </span>
+                                        </p>
+                                        <p style="margin-top: 15px;">
+                                            <label class="konderntang-toggle">
+                                                <input type="checkbox" name="geo_location_auto_redirect" value="1" <?php checked( $geo_location_auto_redirect, true ); ?> />
+                                                <span class="toggle-slider"></span>
+                                                <span class="toggle-label"><?php esc_html_e( 'Auto-redirect on first visit', 'konderntang' ); ?></span>
+                                            </label>
+                                            <span class="description" style="display: block; margin-left: 50px; margin-top: 5px;">
+                                                <?php esc_html_e( 'เปลี่ยนภาษาอัตโนมัติตามประเทศของผู้ใช้ (ใช้ครั้งแรกเท่านั้น)', 'konderntang' ); ?>
+                                            </span>
+                                        </p>
+                                        <p style="margin-top: 15px;">
+                                            <label class="konderntang-toggle">
+                                                <input type="checkbox" name="geo_location_show_modal" value="1" <?php checked( $geo_location_show_modal, true ); ?> />
+                                                <span class="toggle-slider"></span>
+                                                <span class="toggle-label"><?php esc_html_e( 'Show language selection modal', 'konderntang' ); ?></span>
+                                            </label>
+                                            <span class="description" style="display: block; margin-left: 50px; margin-top: 5px;">
+                                                <?php esc_html_e( 'แสดง popup ให้ผู้ใช้เลือกภาษาเมื่อตรวจพบว่ามาจากต่างประเทศ', 'konderntang' ); ?>
+                                            </span>
+                                        </p>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    
+                    <!-- Language Switcher Style -->
+                    <tr>
+                        <th scope="row">
+                            <span class="dashicons dashicons-translation"></span>
+                            <?php esc_html_e( 'Language Switcher Style', 'konderntang' ); ?>
+                        </th>
+                        <td>
+                            <?php if ( ! $polylang_has_languages ) : ?>
+                                <div style="opacity: 0.5; pointer-events: none;">
+                                    <label style="margin-right: 20px;">
+                                        <input type="radio" name="language_switcher_style" value="dropdown" disabled />
+                                        <?php esc_html_e( 'Dropdown (default)', 'konderntang' ); ?>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="language_switcher_style" value="modal" disabled />
+                                        <?php esc_html_e( 'Modal Popup', 'konderntang' ); ?>
+                                    </label>
+                                </div>
+                                <p class="description" style="color: #d63638;">
+                                    <?php esc_html_e( '⚠️ ต้องติดตั้ง Polylang และตั้งค่าอย่างน้อย 2 ภาษาก่อนจึงจะใช้งานได้', 'konderntang' ); ?>
+                                </p>
+                            <?php else : ?>
+                                <label style="margin-right: 20px;">
+                                    <input type="radio" name="language_switcher_style" value="dropdown" <?php checked( $language_switcher_style, 'dropdown' ); ?> />
+                                    <?php esc_html_e( 'Dropdown (default)', 'konderntang' ); ?>
+                                </label>
+                                <label>
+                                    <input type="radio" name="language_switcher_style" value="modal" <?php checked( $language_switcher_style, 'modal' ); ?> />
+                                    <?php esc_html_e( 'Modal Popup', 'konderntang' ); ?>
+                                </label>
+                                <p class="description">
+                                    <?php esc_html_e( 'Dropdown เหมาะกับ 2-3 ภาษา, Modal เหมาะกับ 4+ ภาษา', 'konderntang' ); ?>
+                                </p>
+                                
+                                <div style="margin-top: 15px;">
+                                    <p>
+                                        <label class="konderntang-toggle">
+                                            <input type="checkbox" name="language_switcher_show_flags" value="1" <?php checked( $language_switcher_show_flags, true ); ?> />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'Show Flags', 'konderntang' ); ?></span>
+                                        </label>
+                                    </p>
+                                    
+                                    <?php if ( $language_switcher_style === 'modal' ) : ?>
+                                        <p style="margin-top: 10px;">
+                                            <label class="konderntang-toggle">
+                                                <input type="checkbox" name="language_switcher_show_search" value="1" <?php checked( $language_switcher_show_search, true ); ?> />
+                                                <span class="toggle-slider"></span>
+                                                <span class="toggle-label"><?php esc_html_e( 'Show Search Box (Modal only)', 'konderntang' ); ?></span>
+                                            </label>
+                                        </p>
+                                        <p style="margin-top: 10px;">
+                                            <label for="language_switcher_modal_title">
+                                                <?php esc_html_e( 'Modal Title:', 'konderntang' ); ?>
+                                            </label>
+                                            <input type="text" name="language_switcher_modal_title" id="language_switcher_modal_title" value="<?php echo esc_attr( $language_switcher_modal_title ); ?>" style="margin-left: 10px; width: 300px;" />
+                                        </p>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- Available Languages Info -->
+                                <div style="margin-top: 15px; padding: 10px 15px; background: #f0f6fc; border-left: 3px solid #2271b1; border-radius: 0 4px 4px 0;">
+                                    <p style="margin: 0;">
+                                        <strong><?php esc_html_e( 'Available Languages:', 'konderntang' ); ?></strong>
+                                        <?php 
+                                        $lang_names = array_values( $polylang_languages );
+                                        echo esc_html( implode( ', ', $lang_names ) );
+                                        ?>
+                                        <span style="color: #666;">
+                                            (<?php printf( esc_html__( '%d languages', 'konderntang' ), count( $polylang_languages ) ); ?>)
+                                        </span>
+                                    </p>
+                                    <p style="margin: 5px 0 0 0;">
+                                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=mlang' ) ); ?>">
+                                            <?php esc_html_e( 'Manage Languages in Polylang →', 'konderntang' ); ?>
+                                        </a>
+                                    </p>
+                                </div>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 </table>

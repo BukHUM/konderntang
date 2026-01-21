@@ -210,6 +210,37 @@ function konderntang_scripts()
         );
     }
 
+    // Language Switcher CSS (if geo-location or Polylang is active)
+    if (function_exists('pll_the_languages') || konderntang_get_option('geo_location_enabled', false)) {
+        wp_enqueue_style(
+            'konderntang-language-switcher',
+            KONDERN_THEME_URI . '/assets/css/language-switcher.css',
+            array('konderntang-style'),
+            KONDERN_THEME_VERSION
+        );
+    }
+
+    // Geo-Location JavaScript (if enabled)
+    if (konderntang_get_option('geo_location_enabled', false) || function_exists('pll_the_languages')) {
+        wp_enqueue_script(
+            'konderntang-geo-location',
+            KONDERN_THEME_URI . '/assets/js/geo-location.js',
+            array('konderntang-main'),
+            KONDERN_THEME_VERSION,
+            true
+        );
+
+        // Localize geo-location script
+        wp_localize_script(
+            'konderntang-geo-location',
+            'konderntangAjax',
+            array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('konderntang_geo_nonce'),
+            )
+        );
+    }
+
     // Load breadcrumb config
     $breadcrumb_config = require KONDERN_THEME_DIR . '/config/breadcrumb-config.php';
 
@@ -347,7 +378,8 @@ function konderntang_defer_scripts($tag, $handle)
         'konderntang-news-archive',
         'konderntang-recently-viewed',
         'konderntang-seasonal',
-        'konderntang-error-pages'
+        'konderntang-error-pages',
+        'konderntang-geo-location'
     );
 
     if (in_array($handle, $deferred_scripts)) {

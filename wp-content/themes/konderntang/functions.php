@@ -25,6 +25,7 @@ require_once KONDERN_THEME_DIR . '/inc/component-loader.php';
 require_once KONDERN_THEME_DIR . '/inc/theme-helpers.php';
 require_once KONDERN_THEME_DIR . '/inc/menu-walker.php';
 require_once KONDERN_THEME_DIR . '/inc/menu-custom-fields.php';
+require_once KONDERN_THEME_DIR . '/inc/geo-location.php';
 require_once KONDERN_THEME_DIR . '/inc/widget-areas.php';
 require_once KONDERN_THEME_DIR . '/inc/customizer.php';
 require_once KONDERN_THEME_DIR . '/inc/admin-settings.php';

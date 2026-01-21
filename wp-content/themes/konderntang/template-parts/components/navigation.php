@@ -137,34 +137,10 @@ $menu_location = isset( $menu_location ) ? $menu_location : 'primary';
                     </a>
                 <?php endif; ?>
                 
-                <!-- Language Selector -->
-                <div class="ml-3 relative group">
-                    <button class="px-3 py-2 hover:bg-gray-800 rounded-md transition flex items-center gap-1.5 text-gray-300 hover:text-white">
-                        <i class="ph ph-globe text-lg"></i>
-                        <span class="text-sm"><?php esc_html_e( 'ไทย', 'konderntang' ); ?></span>
-                        <i class="ph ph-caret-down text-xs"></i>
-                    </button>
-                    <div class="absolute right-0 mt-2 w-40 bg-gray-800 rounded-lg shadow-xl border border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                        <div class="py-2">
-                            <?php
-                            $languages = array(
-                                'th' => array( 'flag' => '🇹🇭', 'name' => esc_html__( 'ไทย', 'konderntang' ) ),
-                                'en' => array( 'flag' => '🇬🇧', 'name' => esc_html__( 'อังกฤษ', 'konderntang' ) ),
-                                'fr' => array( 'flag' => '🇫🇷', 'name' => esc_html__( 'ฝรั่งเศส', 'konderntang' ) ),
-                                'ja' => array( 'flag' => '🇯🇵', 'name' => esc_html__( 'ญี่ปุ่น', 'konderntang' ) ),
-                                'lo' => array( 'flag' => '🇱🇦', 'name' => esc_html__( 'ลาว', 'konderntang' ) ),
-                                'de' => array( 'flag' => '🇩🇪', 'name' => esc_html__( 'เยอรมัน', 'konderntang' ) ),
-                                'ru' => array( 'flag' => '🇷🇺', 'name' => esc_html__( 'รัสเซีย', 'konderntang' ) ),
-                            );
-                            foreach ( $languages as $code => $lang ) :
-                                ?>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition flex items-center gap-2" data-lang="<?php echo esc_attr( $code ); ?>">
-                                    <span class="text-base"><?php echo esc_html( $lang['flag'] ); ?></span> <?php echo esc_html( $lang['name'] ); ?>
-                                </a>
-                            <?php endforeach; ?>
-                        </div>
+                    <!-- Language Selector -->
+                    <div class="ml-3">
+                        <?php get_template_part( 'template-parts/components/language-switcher' ); ?>
                     </div>
-                </div>
             </div>
 
             <!-- Mobile Menu Button -->
@@ -223,38 +199,10 @@ $menu_location = isset( $menu_location ) ? $menu_location : 'primary';
             </a>
         </div>
         
-        <!-- Language Selector Mobile - Compact Grid -->
-        <div class="border-t border-gray-700 pt-3">
-            <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                    <i class="ph ph-globe text-gray-400"></i>
-                    <span class="text-gray-400 text-sm font-semibold"><?php esc_html_e( 'เปลี่ยนภาษา', 'konderntang' ); ?></span>
-                </div>
-                <span class="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded"><?php esc_html_e( 'ไทย', 'konderntang' ); ?></span>
+            <!-- Language Selector Mobile -->
+            <div class="border-t border-gray-700 pt-3">
+                <?php get_template_part( 'template-parts/components/language-switcher' ); ?>
             </div>
-            <div class="grid grid-cols-2 gap-2">
-                <?php
-                $languages = array(
-                    'th' => array( 'flag' => '🇹🇭', 'name' => esc_html__( 'ไทย', 'konderntang' ) ),
-                    'en' => array( 'flag' => '🇬🇧', 'name' => esc_html__( 'อังกฤษ', 'konderntang' ) ),
-                    'fr' => array( 'flag' => '🇫🇷', 'name' => esc_html__( 'ฝรั่งเศส', 'konderntang' ) ),
-                    'ja' => array( 'flag' => '🇯🇵', 'name' => esc_html__( 'ญี่ปุ่น', 'konderntang' ) ),
-                    'lo' => array( 'flag' => '🇱🇦', 'name' => esc_html__( 'ลาว', 'konderntang' ) ),
-                    'de' => array( 'flag' => '🇩🇪', 'name' => esc_html__( 'เยอรมัน', 'konderntang' ) ),
-                    'ru' => array( 'flag' => '🇷🇺', 'name' => esc_html__( 'รัสเซีย', 'konderntang' ) ),
-                );
-                $lang_index = 0;
-                foreach ( $languages as $code => $lang ) :
-                    $lang_index++;
-                    $active_class = ( $code === 'th' ) ? 'bg-gray-800 text-white' : 'bg-gray-800/50 text-gray-300';
-                    $col_span = ( $lang_index === count( $languages ) ) ? 'col-span-2' : '';
-                    ?>
-                    <button class="px-3 py-2 <?php echo esc_attr( $active_class ); ?> rounded-lg flex items-center justify-center gap-2 text-sm hover:bg-gray-800 hover:text-white transition <?php echo esc_attr( $col_span ); ?>" data-lang="<?php echo esc_attr( $code ); ?>">
-                        <span class="text-base"><?php echo esc_html( $lang['flag'] ); ?></span> <?php echo esc_html( $lang['name'] ); ?>
-                    </button>
-                <?php endforeach; ?>
-            </div>
-        </div>
     </div>
 </nav>
 
