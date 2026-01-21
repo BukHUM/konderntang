@@ -265,7 +265,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <?php endif; ?>
                 
                 <?php if ( $webp_supported && $webp_enabled === '1' ) : ?>
-                    <div class="io-alert io-alert-info" style="margin-top: 15px; padding: 15px; border-left: 4px solid #2271b1; background: #f0f6fc;">
+                    <div class="io-alert io-alert-info" style="margin-top: 15px; padding: 15px; background: #f0f6fc; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px; font-weight: 600; color: #1d2327;">
                             <span class="dashicons dashicons-info" style="vertical-align: middle;"></span>
                             <?php _e( 'รูปแบบภาพที่ Theme ใช้', 'image-optimization' ); ?>
@@ -292,7 +292,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                         </p>
                     </div>
                 <?php elseif ( $webp_enabled !== '1' ) : ?>
-                    <div class="io-alert io-alert-warning" style="margin-top: 15px; padding: 15px; border-left: 4px solid #dba617; background: #fcf9e8;">
+                    <div class="io-alert io-alert-warning" style="margin-top: 15px; padding: 15px; background: #fcf9e8; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #1d2327;">
                             <strong><?php _e( 'WebP Conversion ปิดอยู่', 'image-optimization' ); ?></strong><br>
                             <?php _e( 'Theme จะใช้ภาพรูปแบบ original (JPEG/PNG) ตามปกติ', 'image-optimization' ); ?>
@@ -353,83 +353,6 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <p class="description">
                     <?php _e( 'ลบข้อมูล EXIF (เช่น GPS, Camera info) เพื่อลดขนาดไฟล์และความเป็นส่วนตัว', 'image-optimization' ); ?>
                 </p>
-            </td>
-        </tr>
-        <tr>
-            <th scope="row">
-                <?php _e( 'Regenerate Images', 'image-optimization' ); ?>
-            </th>
-            <td>
-                <div id="io-regenerate-controls">
-                    <button type="button" id="io-regenerate-images" class="button button-secondary">
-                        <span class="dashicons dashicons-update"></span>
-                        <?php _e( 'Regenerate All Images', 'image-optimization' ); ?>
-                    </button>
-                    <p class="description">
-                        <?php _e( 'ปรับขนาดและแปลงเป็น WebP สำหรับภาพที่มีอยู่แล้วทั้งหมด', 'image-optimization' ); ?>
-                    </p>
-                    <div id="io-regenerate-preview" style="display: none; margin-top: 10px; padding: 15px; background: #f0f6fc; border-left: 4px solid #2271b1; border-radius: 4px;">
-                        <p style="margin: 0 0 10px; font-weight: 600; color: #1d2327;">
-                            <span class="dashicons dashicons-info"></span>
-                            <?php _e( 'พบภาพทั้งหมด:', 'image-optimization' ); ?>
-                            <span id="io-regenerate-total-count" style="color: #2271b1; font-size: 18px;">0</span>
-                            <?php _e( 'ไฟล์', 'image-optimization' ); ?>
-                        </p>
-                        <p style="margin: 0; font-size: 13px; color: #646970;">
-                            <?php _e( 'กระบวนการนี้อาจใช้เวลานาน คุณต้องการดำเนินการต่อหรือไม่?', 'image-optimization' ); ?>
-                        </p>
-                        <div style="margin-top: 10px;">
-                            <button type="button" id="io-regenerate-confirm" class="button button-primary">
-                                <?php _e( 'เริ่ม Regenerate', 'image-optimization' ); ?>
-                            </button>
-                            <button type="button" id="io-regenerate-cancel-preview" class="button">
-                                <?php _e( 'ยกเลิก', 'image-optimization' ); ?>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div id="io-regenerate-progress" style="display: none; margin-top: 15px;">
-                    <div style="background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h4 style="margin: 0; font-size: 14px; font-weight: 600; color: #1d2327;">
-                                <span class="dashicons dashicons-update" style="animation: spin 1s linear infinite;"></span>
-                                <?php _e( 'กำลัง Regenerate Images...', 'image-optimization' ); ?>
-                            </h4>
-                            <button type="button" id="io-regenerate-cancel" class="button button-small">
-                                <span class="dashicons dashicons-dismiss"></span>
-                                <?php _e( 'ยกเลิก', 'image-optimization' ); ?>
-                            </button>
-                        </div>
-                        <div class="io-progress-container" style="margin-bottom: 15px;">
-                            <div id="io-regenerate-progress-bar" class="io-progress-bar"></div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; font-size: 13px;">
-                            <div>
-                                <strong style="color: #646970; display: block; margin-bottom: 5px;"><?php _e( 'ทำเสร็จแล้ว:', 'image-optimization' ); ?></strong>
-                                <span id="io-regenerate-processed" style="font-size: 20px; font-weight: 700; color: #00a32a;">0</span>
-                                <span style="color: #646970;">/</span>
-                                <span id="io-regenerate-total" style="color: #646970;">0</span>
-                            </div>
-                            <div>
-                                <strong style="color: #646970; display: block; margin-bottom: 5px;"><?php _e( 'สำเร็จ:', 'image-optimization' ); ?></strong>
-                                <span id="io-regenerate-success" style="font-size: 20px; font-weight: 700; color: #00a32a;">0</span>
-                            </div>
-                            <div>
-                                <strong style="color: #646970; display: block; margin-bottom: 5px;"><?php _e( 'ล้มเหลว:', 'image-optimization' ); ?></strong>
-                                <span id="io-regenerate-failed" style="font-size: 20px; font-weight: 700; color: #d63638;">0</span>
-                            </div>
-                            <div>
-                                <strong style="color: #646970; display: block; margin-bottom: 5px;"><?php _e( 'เวลาที่ใช้:', 'image-optimization' ); ?></strong>
-                                <span id="io-regenerate-time" style="font-size: 20px; font-weight: 700; color: #2271b1;">0:00</span>
-                            </div>
-                            <div>
-                                <strong style="color: #646970; display: block; margin-bottom: 5px;"><?php _e( 'เวลาที่เหลือ (ประมาณ):', 'image-optimization' ); ?></strong>
-                                <span id="io-regenerate-eta" style="font-size: 20px; font-weight: 700; color: #646970;">-</span>
-                            </div>
-                        </div>
-                        <p id="io-regenerate-status" class="io-progress-status" style="margin-top: 15px;"></p>
-                    </div>
-                </div>
             </td>
         </tr>
     </table>

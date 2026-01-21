@@ -16,20 +16,28 @@ $menu_location = isset( $menu_location ) ? $menu_location : 'primary';
             <!-- Logo -->
             <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="flex-shrink-0 flex items-center gap-2" rel="home">
                 <?php
+                // Priority: 1. WordPress Custom Logo, 2. Site Logo (Theme Settings), 3. Logo Fallback Image, 4. Default image, 5. Site name
                 if ( has_custom_logo() ) {
                     the_custom_logo();
                 } else {
-                    $fallback_logo = konderntang_get_option( 'logo_fallback_image', '' );
-                    if ( $fallback_logo ) {
+                    $site_logo = konderntang_get_option( 'site_logo', '' );
+                    if ( $site_logo ) {
                         ?>
-                        <img src="<?php echo esc_url( $fallback_logo ); ?>" alt="<?php bloginfo( 'name' ); ?>" class="h-16 w-auto object-contain">
+                        <img src="<?php echo esc_url( $site_logo ); ?>" alt="<?php bloginfo( 'name' ); ?>" class="h-16 w-auto object-contain">
                         <?php
                     } else {
-                        // Default fallback
-                        ?>
-                        <img src="<?php echo esc_url( KONDERN_THEME_URI . '/assets/images/konderntang-no-border.png' ); ?>" alt="<?php bloginfo( 'name' ); ?>" class="h-16 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                        <span class="text-white font-heading font-bold text-xl" style="display:none;"><?php bloginfo( 'name' ); ?></span>
-                        <?php
+                        $fallback_logo = konderntang_get_option( 'logo_fallback_image', '' );
+                        if ( $fallback_logo ) {
+                            ?>
+                            <img src="<?php echo esc_url( $fallback_logo ); ?>" alt="<?php bloginfo( 'name' ); ?>" class="h-16 w-auto object-contain">
+                            <?php
+                        } else {
+                            // Default fallback image
+                            ?>
+                            <img src="<?php echo esc_url( KONDERN_THEME_URI . '/assets/images/konderntang-no-border.png' ); ?>" alt="<?php bloginfo( 'name' ); ?>" class="h-16 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <span class="text-white font-heading font-bold text-xl" style="display:none;"><?php bloginfo( 'name' ); ?></span>
+                            <?php
+                        }
                     }
                 }
                 ?>
@@ -37,7 +45,23 @@ $menu_location = isset( $menu_location ) ? $menu_location : 'primary';
 
             <!-- Desktop Menu -->
             <div class="hidden xl:flex space-x-1 items-center font-heading font-medium text-gray-300">
-                <!-- Home Button -->
+                <?php
+                // Use WordPress menu if available, otherwise fallback to config
+                if ( has_nav_menu( 'primary' ) ) {
+                    wp_nav_menu(
+                        array(
+                            'theme_location' => 'primary',
+                            'container'      => false,
+                            'menu_class'     => 'flex space-x-1 items-center',
+                            'menu_id'        => 'primary-menu',
+                            'fallback_cb'    => false,
+                            'walker'         => new KonDernTang_Walker_Nav_Menu(),
+                        )
+                    );
+                } else {
+                    // Fallback to default menu from config
+                    ?>
+                    <!-- Home Button -->
                 <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="px-3 py-2 text-white hover:bg-gray-800 rounded-md transition flex items-center gap-1.5">
                     <i class="ph ph-house text-lg"></i> <?php esc_html_e( 'หน้าแรก', 'konderntang' ); ?>
                 </a>
@@ -102,10 +126,13 @@ $menu_location = isset( $menu_location ) ? $menu_location : 'primary';
                 <a href="<?php echo esc_url( home_url( '/promotion/' ) ); ?>" class="ml-2 px-4 py-2 bg-secondary text-white rounded-full hover:bg-orange-600 transition shadow-sm flex items-center gap-1.5">
                     <i class="ph ph-tag text-lg"></i> <?php esc_html_e( 'โปรโมชั่น', 'konderntang' ); ?>
                 </a>
+                    <?php
+                }
+                ?>
                 
                 <!-- Search Button -->
                 <?php if ( konderntang_get_option( 'header_show_search', true ) ) : ?>
-                    <a href="<?php echo esc_url( home_url( '/?s=' ) ); ?>" class="ml-2 px-3 py-2 hover:text-white hover:bg-gray-800 rounded-md transition flex items-center gap-1.5" aria-label="<?php esc_attr_e( 'Search', 'konderntang' ); ?>">
+                    <a href="<?php echo esc_url( home_url( '/?s=' ) ); ?>" class="ml-2 px-3 py-2 hover:text-white hover:bg-gray-800 rounded-md transition flex items-center gap-1.5 text-gray-300" aria-label="<?php esc_attr_e( 'Search', 'konderntang' ); ?>">
                         <i class="ph ph-magnifying-glass text-lg"></i>
                     </a>
                 <?php endif; ?>

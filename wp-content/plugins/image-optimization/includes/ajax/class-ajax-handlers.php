@@ -44,6 +44,9 @@ class IO_Ajax_Handlers {
         // Delete unused images
         add_action( 'wp_ajax_io_delete_unused_images', array( $this, 'delete_unused_images' ) );
         
+        // Fix scan errors
+        add_action( 'wp_ajax_io_fix_scan_errors', array( $this, 'fix_scan_errors' ) );
+        
         // Regenerate images
         add_action( 'wp_ajax_io_count_images_for_regenerate', array( $this, 'count_images_for_regenerate' ) );
         add_action( 'wp_ajax_io_regenerate_images', array( $this, 'regenerate_images' ) );
@@ -62,9 +65,20 @@ class IO_Ajax_Handlers {
             ) );
         }
         
-        // Increase time limit and memory limit
-        @set_time_limit( 300 );
-        @ini_set( 'memory_limit', '256M' );
+        // Increase time limit and memory limit for scanning
+        @set_time_limit( 600 ); // 10 minutes for large scans
+        @ini_set( 'memory_limit', '512M' );
+        
+        // Try to increase memory limit more if possible
+        $current_memory = ini_get( 'memory_limit' );
+        if ( $current_memory ) {
+            $current_bytes = $this->convert_to_bytes( $current_memory );
+            $target_bytes = $this->convert_to_bytes( '512M' );
+            if ( $current_bytes < $target_bytes ) {
+                // Try to set to 1GB if 512M doesn't work
+                @ini_set( 'memory_limit', '1024M' );
+            }
+        }
         
         $scan_type = isset( $_POST['scan_type'] ) ? sanitize_text_field( $_POST['scan_type'] ) : 'all';
         $use_cache = isset( $_POST['use_cache'] ) ? (bool) $_POST['use_cache'] : true;
@@ -102,16 +116,20 @@ class IO_Ajax_Handlers {
                 throw new Exception( __( 'ผลการแสกนไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง', 'image-optimization' ) );
             }
             
-            // Check if there was an error in the scan results
-            if ( isset( $results['error'] ) && ! empty( $results['error'] ) ) {
+            // Check if there was a fatal error (only send error if no files were scanned at all)
+            $has_results = ! empty( $results['thumbnails'] ) || ! empty( $results['webp'] ) || ! empty( $results['orphaned'] );
+            $has_fatal_error = isset( $results['error'] ) && ! empty( $results['error'] ) && ! $has_results;
+            
+            if ( $has_fatal_error ) {
                 $error_message = $this->translate_error_message( $results['error'] );
                 wp_send_json_error( array(
                     'message' => $error_message,
                 ) );
             }
             
+            // If we have results (even with some errors), send success with warnings
             // Store results in transient for later use
-            set_transient( 'io_scan_results', $results, HOUR_IN_SECONDS );
+            $this->save_scan_results( $results, HOUR_IN_SECONDS );
             
             wp_send_json_success( $results );
         } catch ( Exception $e ) {
@@ -283,6 +301,78 @@ class IO_Ajax_Handlers {
     }
     
     /**
+     * Fix scan errors AJAX handler
+     */
+    public function fix_scan_errors() {
+        check_ajax_referer( 'io_settings_nonce', 'nonce' );
+        
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array(
+                'message' => __( 'คุณไม่มีสิทธิ์ในการดำเนินการนี้', 'image-optimization' ),
+            ) );
+        }
+        
+        $error_type = isset( $_POST['error_type'] ) ? sanitize_text_field( $_POST['error_type'] ) : '';
+        $file_path = isset( $_POST['file_path'] ) ? sanitize_text_field( $_POST['file_path'] ) : '';
+        
+        $results = array(
+            'fixed' => false,
+            'message' => '',
+            'errors' => array(),
+        );
+        
+        try {
+            // Handle different error types
+            switch ( $error_type ) {
+                case 'permission':
+                case 'not_readable':
+                    // Try to fix directory permissions
+                    if ( ! empty( $file_path ) && is_dir( $file_path ) ) {
+                        // Try to make directory readable
+                        $old_perms = fileperms( $file_path );
+                        $new_perms = 0755; // Standard directory permissions
+                        
+                        if ( @chmod( $file_path, $new_perms ) ) {
+                            $results['fixed'] = true;
+                            $results['message'] = sprintf( 
+                                __( 'แก้ไขสิทธิ์การเข้าถึงโฟลเดอร์ %s สำเร็จ', 'image-optimization' ),
+                                basename( $file_path )
+                            );
+                        } else {
+                            $results['message'] = sprintf( 
+                                __( 'ไม่สามารถแก้ไขสิทธิ์ได้ กรุณาตรวจสอบสิทธิ์ของ PHP user หรือใช้ FTP/SSH เพื่อแก้ไข', 'image-optimization' ),
+                                basename( $file_path )
+                            );
+                        }
+                    } else {
+                        $results['message'] = __( 'ไม่พบโฟลเดอร์ที่ระบุ', 'image-optimization' );
+                    }
+                    break;
+                    
+                case 'not_found':
+                    // Can't fix - file/directory doesn't exist
+                    $results['message'] = __( 'ไม่สามารถแก้ไขได้: ไฟล์หรือโฟลเดอร์ไม่มีอยู่จริง', 'image-optimization' );
+                    break;
+                    
+                case 'database':
+                    // Can't auto-fix database errors
+                    $results['message'] = __( 'ไม่สามารถแก้ไขได้อัตโนมัติ กรุณาตรวจสอบการเชื่อมต่อฐานข้อมูล', 'image-optimization' );
+                    break;
+                    
+                default:
+                    $results['message'] = __( 'ไม่ทราบประเภทของปัญหา', 'image-optimization' );
+            }
+            
+            wp_send_json_success( $results );
+        } catch ( Exception $e ) {
+            error_log( '[Image Optimization] Fix error: ' . $e->getMessage() );
+            wp_send_json_error( array(
+                'message' => __( 'เกิดข้อผิดพลาดในการแก้ไข: ', 'image-optimization' ) . $e->getMessage(),
+            ) );
+        }
+    }
+    
+    /**
      * Delete unused images AJAX handler
      */
     public function delete_unused_images() {
@@ -294,14 +384,34 @@ class IO_Ajax_Handlers {
             ) );
         }
         
-        // Increase time limit and memory limit
+        // Increase time limit and memory limit for batch processing
         @set_time_limit( 300 );
-        @ini_set( 'memory_limit', '256M' );
+        @ini_set( 'memory_limit', '512M' );
         
         $files = isset( $_POST['files'] ) ? $_POST['files'] : array();
-        $dry_run = isset( $_POST['dry_run'] ) ? (bool) $_POST['dry_run'] : false;
+        // Handle dry_run: can be boolean false, string 'false', or not set
+        $dry_run = false;
+        if ( isset( $_POST['dry_run'] ) ) {
+            $dry_run_value = $_POST['dry_run'];
+            // Convert string 'false' to boolean false
+            if ( $dry_run_value === 'false' || $dry_run_value === false || $dry_run_value === 0 || $dry_run_value === '0' ) {
+                $dry_run = false;
+            } else {
+                $dry_run = (bool) $dry_run_value;
+            }
+        }
         
-        if ( empty( $files ) && ! isset( $_POST['delete_all'] ) ) {
+        // Check for delete_all (handle string 'true' from JS or boolean)
+        $delete_all = false;
+        if ( isset( $_POST['delete_all'] ) ) {
+            if ( $_POST['delete_all'] === 'true' || $_POST['delete_all'] === '1' || $_POST['delete_all'] === true ) {
+                $delete_all = true;
+            }
+        }
+        
+        $delete_type = isset( $_POST['delete_type'] ) ? sanitize_text_field( $_POST['delete_type'] ) : '';
+        
+        if ( empty( $files ) && ! $delete_all && empty( $delete_type ) ) {
             wp_send_json_error( array(
                 'message' => __( 'No files specified for deletion.', 'image-optimization' ),
             ) );
@@ -313,70 +423,128 @@ class IO_Ajax_Handlers {
                 throw new Exception( __( 'Failed to initialize Image Cleanup class.', 'image-optimization' ) );
             }
             
-            // If delete_all, get all files from scan results
-            if ( isset( $_POST['delete_all'] ) && $_POST['delete_all'] ) {
-                $scan_results = get_transient( 'io_scan_results' );
+            $batch_size = 500;
+            $remaining_files = 0;
+            $save_transient = false;
+            
+            // If delete_all or delete_type, get files from scan results with batching
+            if ( $delete_all || ! empty( $delete_type ) ) {
+                $scan_results = $this->get_scan_results();
                 if ( ! $scan_results || ! is_array( $scan_results ) ) {
                     wp_send_json_error( array(
                         'message' => __( 'No scan results found. Please scan first.', 'image-optimization' ),
                     ) );
                 }
                 
-                // Collect all files from scan results
                 $files = array();
-                if ( ! empty( $scan_results['thumbnails'] ) && is_array( $scan_results['thumbnails'] ) ) {
-                    foreach ( $scan_results['thumbnails'] as $file ) {
-                        if ( isset( $file['path'] ) && is_string( $file['path'] ) ) {
-                            $files[] = $file['path'];
-                        }
-                    }
+                $types_to_process = array();
+                
+                if ( $delete_all ) {
+                    $types_to_process = array( 'thumbnails', 'webp', 'orphaned' );
+                } elseif ( ! empty( $delete_type ) ) {
+                    $types_to_process = array( $delete_type );
                 }
-                if ( ! empty( $scan_results['webp'] ) && is_array( $scan_results['webp'] ) ) {
-                    foreach ( $scan_results['webp'] as $file ) {
-                        if ( isset( $file['path'] ) && is_string( $file['path'] ) ) {
-                            $files[] = $file['path'];
+                
+                // Process each type
+                foreach ( $types_to_process as $type ) {
+                    if ( ! empty( $scan_results[ $type ] ) && is_array( $scan_results[ $type ] ) ) {
+                        // Calculate how many more files we need for this batch
+                        $needed = $batch_size - count( $files );
+                        
+                        if ( $needed <= 0 ) {
+                            break;
                         }
-                    }
-                }
-                if ( ! empty( $scan_results['orphaned'] ) && is_array( $scan_results['orphaned'] ) ) {
-                    foreach ( $scan_results['orphaned'] as $file ) {
-                        if ( isset( $file['path'] ) && is_string( $file['path'] ) ) {
-                            $files[] = $file['path'];
+                        
+                        // Take a chunk of files from the beginning of the array
+                        // array_splice removes these elements from $scan_results[$type]
+                        // This ensures we make progress even if some items are invalid
+                        $chunk = array_splice( $scan_results[ $type ], 0, $needed );
+                        
+                        // Log batch processing details
+                        error_log( sprintf( '[Image Optimization] Batch splice: Type=%s, Count=%d, RemainingInType=%d', $type, count($chunk), count($scan_results[$type]) ) );
+                        
+                        foreach ( $chunk as $file ) {
+                            if ( isset( $file['path'] ) && is_string( $file['path'] ) ) {
+                                // Normalize path: Fix Windows path format issues
+                                $path = $file['path'];
+                                // Replace mixed slashes (C:\/path) with forward slashes
+                                $path = str_replace( array( '\\/', '\/' ), '/', $path );
+                                // Replace backslashes with forward slashes
+                                $path = str_replace( '\\', '/', $path );
+                                // Use wp_normalize_path for final normalization
+                                $normalized_path = wp_normalize_path( $path );
+                                // Only add if path exists or is valid
+                                if ( ! empty( $normalized_path ) ) {
+                                    $files[] = $normalized_path;
+                                } else {
+                                    error_log( sprintf( '[Image Optimization] Invalid path in chunk: %s', $file['path'] ) );
+                                }
+                            } else {
+                                error_log( sprintf( '[Image Optimization] Invalid file structure in chunk: %s', print_r($file, true) ) );
+                            }
                         }
+                        
+                        // Log extracted files for debugging
+                        if ( ! empty( $files ) ) {
+                            error_log( sprintf( '[Image Optimization] Extracted %d files from chunk. First file: %s', count($files), $files[0] ) );
+                        }
+                        
+                        $save_transient = true;
                     }
                 }
                 
-                if ( empty( $files ) ) {
-                    wp_send_json_error( array(
-                        'message' => __( 'No files found in scan results to delete.', 'image-optimization' ),
+                // Recount remaining files
+                foreach ( $types_to_process as $type ) {
+                    if ( ! empty( $scan_results[ $type ] ) ) {
+                        $remaining_files += count( $scan_results[ $type ] );
+                    }
+                }
+                
+                if ( empty( $files ) && $remaining_files === 0 ) {
+                     wp_send_json_error( array(
+                        'message' => __( 'No files found to delete.', 'image-optimization' ),
                     ) );
                 }
             } else {
-                // Validate and sanitize file paths
+                // Manual selection: Validate and sanitize file paths
                 if ( ! is_array( $files ) ) {
                     $files = array();
                 }
                 $files = array_map( 'sanitize_text_field', $files );
                 $files = array_filter( $files, 'strlen' ); // Remove empty strings
+                
+                if ( empty( $files ) ) {
+                    wp_send_json_error( array(
+                        'message' => __( 'No files specified for deletion.', 'image-optimization' ),
+                    ) );
+                }
             }
             
-            if ( empty( $files ) ) {
-                wp_send_json_error( array(
-                    'message' => __( 'No files specified for deletion.', 'image-optimization' ),
-                ) );
-            }
+            // Log deletion attempt with sample paths
+            $sample_paths = array_slice( $files, 0, 3 );
+            error_log( sprintf( '[Image Optimization] Starting deletion: Count=%d, Type=%s, DryRun=%s, Sample paths: %s', 
+                count($files), 
+                $delete_type ?: ($delete_all ? 'all' : 'manual'),
+                $dry_run ? 'true' : 'false',
+                implode(', ', $sample_paths)
+            ) );
             
+            // Perform deletion
             $results = $cleanup->delete_unused_images( $files, array( 'dry_run' => $dry_run ) );
             
             if ( ! is_array( $results ) ) {
                 throw new Exception( __( 'Invalid deletion results returned.', 'image-optimization' ) );
             }
             
+            // Log deletion results
+            error_log( sprintf( '[Image Optimization] Deletion complete: Deleted=%d, Failed=%d, Remaining=%d', $results['deleted'], $results['failed'], $remaining_files ) );
+            
             // Format response for JavaScript
             $response_data = array(
                 'deleted'      => $results['deleted'],
                 'failed'       => $results['failed'],
                 'failed_files' => array(),
+                'remaining'    => $remaining_files,
             );
             
             // Format failed files for display
@@ -393,18 +561,40 @@ class IO_Ajax_Handlers {
                 }
             }
             
-            // Update scan results if not dry run
-            if ( ! $dry_run && $results['deleted'] > 0 ) {
-                $scan_results = get_transient( 'io_scan_results' );
-                if ( $scan_results ) {
-                    // Get deleted file paths from errors (we need to track which files were actually deleted)
-                    // Since delete_unused_images doesn't return deleted paths, we'll refresh the scan
-                    // For now, just refresh the scan results
-                    set_transient( 'io_scan_results', null, 0 );
+            // Update scan results logic
+            if ( ! $dry_run ) {
+                if ( $save_transient ) {
+                    // Batch mode: Save updated transient
+                     foreach ( array( 'thumbnails', 'webp', 'orphaned' ) as $type ) {
+                        if ( isset( $scan_results[ $type ] ) ) {
+                            $scan_results[ $type ] = array_values( $scan_results[ $type ] );
+                        }
+                    }
+                    // Update stats
+                    $scan_results['statistics']['total_thumbnails'] = count( $scan_results['thumbnails'] ?? [] );
+                    $scan_results['statistics']['total_webp'] = count( $scan_results['webp'] ?? [] );
+                    $scan_results['statistics']['total_orphaned'] = count( $scan_results['orphaned'] ?? [] );
+                    
+                    if ( $remaining_files === 0 ) {
+                        // All done, clear transient
+                        $this->delete_scan_results();
+                    } else {
+                        // Save progress
+                        $saved = $this->save_scan_results( $scan_results, DAY_IN_SECONDS );
+                        if ( ! $saved ) {
+                             error_log( '[Image Optimization] Critical: Failed to save updated scan results. Aborting to prevent loop.' );
+                             $response_data['remaining'] = 0; // Tell client to stop
+                             $this->delete_scan_results(); // Nuke stale data
+                        }
+                    }
+                } elseif ( $results['deleted'] > 0 ) {
+                    // Manual mode: Clear to force rescan
+                    $this->delete_scan_results();
                 }
             }
             
             wp_send_json_success( $response_data );
+            
         } catch ( Exception $e ) {
             error_log( '[Image Optimization] Delete error: ' . $e->getMessage() );
             wp_send_json_error( array(
@@ -431,20 +621,63 @@ class IO_Ajax_Handlers {
         }
         
         try {
-            // Get all image attachments
-            $attachments = get_posts( array(
+            // Get options
+            $regenerate_type = isset( $_POST['regenerate_type'] ) ? sanitize_text_field( $_POST['regenerate_type'] ) : 'all';
+            $date_from = isset( $_POST['date_from'] ) ? sanitize_text_field( $_POST['date_from'] ) : '';
+            $date_to = isset( $_POST['date_to'] ) ? sanitize_text_field( $_POST['date_to'] ) : '';
+            $skip_processed = isset( $_POST['skip_processed'] ) ? (bool) $_POST['skip_processed'] : false;
+            
+            // Build query args
+            $query_args = array(
                 'post_type'      => 'attachment',
                 'post_mime_type' => 'image',
                 'posts_per_page' => -1,
                 'post_status'    => 'inherit',
                 'fields'         => 'ids',
                 'no_found_rows'  => true,
-            ) );
+            );
             
-            $count = count( $attachments );
+            // Date range filter
+            if ( ! empty( $date_from ) || ! empty( $date_to ) ) {
+                $date_query = array();
+                if ( ! empty( $date_from ) ) {
+                    $date_query['after'] = $date_from . ' 00:00:00';
+                }
+                if ( ! empty( $date_to ) ) {
+                    $date_query['before'] = $date_to . ' 23:59:59';
+                }
+                $date_query['inclusive'] = true;
+                $query_args['date_query'] = array( $date_query );
+            }
+            
+            // Get all image attachments
+            $attachments = get_posts( $query_args );
+            $total = count( $attachments );
+            
+            // Filter by skip processed
+            $selected = $total;
+            $skipped = 0;
+            if ( $skip_processed ) {
+                $selected = 0;
+                foreach ( $attachments as $attachment_id ) {
+                    // Check if already processed
+                    $processed = get_post_meta( $attachment_id, '_io_regenerated', true );
+                    if ( ! $processed ) {
+                        $selected++;
+                    } else {
+                        $skipped++;
+                    }
+                }
+            }
+            
+            // Log for debugging
+            error_log( sprintf( '[Image Optimization] Count regenerate: Total=%d, Selected=%d, Skipped=%d, SkipProcessed=%s', 
+                $total, $selected, $skipped, $skip_processed ? 'true' : 'false' ) );
             
             wp_send_json_success( array(
-                'count' => $count,
+                'total' => $total,
+                'selected' => $selected,
+                'skipped' => $skipped,
             ) );
         } catch ( Exception $e ) {
             error_log( '[Image Optimization] Count error: ' . $e->getMessage() );
@@ -474,6 +707,18 @@ class IO_Ajax_Handlers {
         $offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
         $total = isset( $_POST['total'] ) ? absint( $_POST['total'] ) : 0;
         
+        // Get options
+        $regenerate_type = isset( $_POST['regenerate_type'] ) ? sanitize_text_field( $_POST['regenerate_type'] ) : 'all';
+        $date_from = isset( $_POST['date_from'] ) ? sanitize_text_field( $_POST['date_from'] ) : '';
+        $date_to = isset( $_POST['date_to'] ) ? sanitize_text_field( $_POST['date_to'] ) : '';
+        $skip_processed = isset( $_POST['skip_processed'] ) ? (bool) $_POST['skip_processed'] : false;
+        $regenerate_thumbnails = isset( $_POST['regenerate_thumbnails'] ) ? (bool) $_POST['regenerate_thumbnails'] : false;
+        
+        // Validate regenerate_type
+        if ( ! in_array( $regenerate_type, array( 'all', 'resize', 'webp' ), true ) ) {
+            $regenerate_type = 'all';
+        }
+        
         // Check if cancelled
         $cancelled = get_transient( 'io_regenerate_cancelled' );
         if ( $cancelled ) {
@@ -487,18 +732,51 @@ class IO_Ajax_Handlers {
             require_once IO_PLUGIN_DIR . 'includes/class-image-optimizer.php';
             $optimizer = IO_Image_Optimizer::get_instance();
             
-            // Get batch of attachments
-            $attachments = get_posts( array(
+            // Build query args
+            $query_args = array(
                 'post_type'      => 'attachment',
                 'post_mime_type' => 'image',
-                'posts_per_page' => $batch_size,
+                'posts_per_page' => $batch_size * 2, // Get more to account for skipped
                 'post_status'    => 'inherit',
                 'fields'         => 'ids',
                 'offset'         => $offset,
                 'orderby'        => 'ID',
                 'order'          => 'ASC',
                 'no_found_rows'  => true,
-            ) );
+            );
+            
+            // Date range filter
+            if ( ! empty( $date_from ) || ! empty( $date_to ) ) {
+                $date_query = array();
+                if ( ! empty( $date_from ) ) {
+                    $date_query['after'] = $date_from . ' 00:00:00';
+                }
+                if ( ! empty( $date_to ) ) {
+                    $date_query['before'] = $date_to . ' 23:59:59';
+                }
+                $date_query['inclusive'] = true;
+                $query_args['date_query'] = array( $date_query );
+            }
+            
+            // Get batch of attachments
+            $attachments = get_posts( $query_args );
+            
+            // Filter by skip processed if needed
+            if ( $skip_processed ) {
+                $filtered = array();
+                foreach ( $attachments as $attachment_id ) {
+                    $processed = get_post_meta( $attachment_id, '_io_regenerated', true );
+                    if ( ! $processed ) {
+                        $filtered[] = $attachment_id;
+                        if ( count( $filtered ) >= $batch_size ) {
+                            break;
+                        }
+                    }
+                }
+                $attachments = $filtered;
+            } else {
+                $attachments = array_slice( $attachments, 0, $batch_size );
+            }
             
             if ( empty( $attachments ) ) {
                 // All done
@@ -522,9 +800,15 @@ class IO_Ajax_Handlers {
                 }
                 
                 try {
-                    $result = $optimizer->regenerate_image( $attachment_id );
+                    $options = array(
+                        'regenerate_type' => $regenerate_type,
+                        'regenerate_thumbnails' => $regenerate_thumbnails,
+                    );
+                    $result = $optimizer->regenerate_image( $attachment_id, $options );
                     if ( $result && ! is_wp_error( $result ) ) {
                         $success++;
+                        // Mark as processed
+                        update_post_meta( $attachment_id, '_io_regenerated', time() );
                     } else {
                         $failed++;
                         if ( is_wp_error( $result ) ) {
@@ -542,8 +826,10 @@ class IO_Ajax_Handlers {
             // Check cancelled again after processing
             $cancelled = get_transient( 'io_regenerate_cancelled' );
             
-            $new_offset = $offset + $processed;
-            $remaining = max( 0, $total - $new_offset );
+            // Calculate new offset - use actual processed count, not batch size
+            // because we may have skipped some images
+            $new_offset = $offset + count( $attachments );
+            $remaining = max( 0, $total - ( $offset + $processed ) );
             
             // If cancelled, clear the flag and return cancelled status
             if ( $cancelled ) {
@@ -601,5 +887,85 @@ class IO_Ajax_Handlers {
                 'message' => __( 'Regeneration cancelled.', 'image-optimization' ),
             ) );
         }
+    }
+    
+    /**
+     * Get scan results file path
+     * 
+     * @return string File path
+     */
+    private function get_scan_results_file() {
+        $upload_dir = wp_upload_dir();
+        $dir = $upload_dir['basedir'] . '/io_data';
+        if ( ! file_exists( $dir ) ) {
+            wp_mkdir_p( $dir );
+            // Secure directory
+            @file_put_contents( $dir . '/.htaccess', 'Deny from all' );
+            @file_put_contents( $dir . '/index.php', '<?php // Silence is golden' );
+        }
+        return $dir . '/scan_results.json';
+    }
+
+    /**
+     * Get scan results
+     * 
+     * @return array|false Scan results or false
+     */
+    private function get_scan_results() {
+        $file = $this->get_scan_results_file();
+        if ( file_exists( $file ) ) {
+            $content = @file_get_contents( $file );
+            if ( ! empty( $content ) ) {
+                $data = json_decode( $content, true );
+                if ( is_array( $data ) ) {
+                    return $data;
+                }
+            }
+        }
+        return get_transient( 'io_scan_results' );
+    }
+
+    /**
+     * Save scan results
+     * 
+     * @param array $data Scan results
+     * @param int $expiration Expiration in seconds (unused for file, kept for compatibility)
+     * @return bool Success
+     */
+    private function save_scan_results( $data, $expiration = 0 ) {
+        $file = $this->get_scan_results_file();
+        if ( $file ) {
+            $json = json_encode( $data );
+            if ( $json ) {
+                // Use exclusive lock to prevent race conditions
+                $result = @file_put_contents( $file, $json, LOCK_EX );
+                
+                if ( $result !== false ) {
+                    return true;
+                }
+                
+                // If write failed, log error and try to remove the file to prevent stale data
+                error_log( '[Image Optimization] Failed to write scan results to file: ' . $file );
+                @unlink( $file );
+            } else {
+                 error_log( '[Image Optimization] Failed to encode scan results JSON: ' . json_last_error_msg() );
+            }
+        }
+        
+        // Fallback to transient if file storage fails
+        return set_transient( 'io_scan_results', $data, $expiration );
+    }
+
+    /**
+     * Delete scan results
+     * 
+     * @return bool Success
+     */
+    private function delete_scan_results() {
+        $file = $this->get_scan_results_file();
+        if ( file_exists( $file ) ) {
+            @unlink( $file );
+        }
+        return delete_transient( 'io_scan_results' );
     }
 }

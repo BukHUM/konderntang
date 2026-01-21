@@ -44,6 +44,16 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <?php _e( 'กำลังแสกน...', 'image-optimization' ); ?>
             </p>
         </div>
+        
+        <!-- Error Summary Box -->
+        <div id="io-error-summary" style="display: none;" class="io-error-summary-box">
+            <h4 style="margin-top: 0;">
+                <span class="dashicons dashicons-warning" style="color: #dba617;"></span>
+                <?php _e( 'สรุปปัญหา', 'image-optimization' ); ?>
+            </h4>
+            <div id="io-error-summary-content"></div>
+            <div id="io-error-actions" style="margin-top: 15px;"></div>
+        </div>
     </div>
     
     <!-- Results Section -->
@@ -101,6 +111,13 @@ if ( ! defined( 'ABSPATH' ) ) {
                         <span id="tab-orphaned-count" class="count-badge">0</span>
                     </a>
                 </li>
+                <li id="error-files-tab-li" style="display: none;">
+                    <a href="#error-tab" class="nav-tab" data-tab="error">
+                        <span class="dashicons dashicons-warning"></span>
+                        <?php _e( 'ไฟล์ที่มีปัญหา', 'image-optimization' ); ?>
+                        <span id="tab-error-count" class="count-badge">0</span>
+                    </a>
+                </li>
                 <li id="failed-files-tab-li" style="display: none;">
                     <a href="#failed-tab" class="nav-tab" data-tab="failed">
                         <span class="dashicons dashicons-dismiss"></span>
@@ -139,7 +156,16 @@ if ( ! defined( 'ABSPATH' ) ) {
                     </div>
                 </div>
                 
-                <!-- Failed Files Tab -->
+                <!-- Error Files Tab (from scan) -->
+                <div id="error-tab" class="tab-pane">
+                    <div id="error-list" class="file-list">
+                        <p class="file-list-empty">
+                            <?php _e( 'ไม่มีไฟล์ที่มีปัญหา', 'image-optimization' ); ?>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Failed Files Tab (from delete) -->
                 <div id="failed-tab" class="tab-pane">
                     <div id="failed-list" class="file-list">
                         <p class="file-list-empty">
@@ -157,21 +183,57 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <?php _e( 'Delete Files', 'image-optimization' ); ?>
             </h3>
             <p class="description">
-                <?php _e( 'เลือกไฟล์ที่ต้องการลบ หรือลบทั้งหมด ระวัง: การลบไฟล์ไม่สามารถยกเลิกได้', 'image-optimization' ); ?>
+                <?php _e( 'เลือกไฟล์ที่ต้องการลบ หรือลบตามประเภท ระวัง: การลบไฟล์ไม่สามารถยกเลิกได้', 'image-optimization' ); ?>
             </p>
-            <div>
-                <button type="button" id="io-delete-selected" class="button button-secondary" disabled>
-                    <span class="dashicons dashicons-trash"></span>
-                    <?php _e( 'Delete Selected', 'image-optimization' ); ?>
-                </button>
-                <button type="button" id="io-delete-all" class="button button-danger">
-                    <span class="dashicons dashicons-warning"></span>
-                    <?php _e( 'Delete All', 'image-optimization' ); ?>
-                </button>
-                <button type="button" id="io-download-report" class="button button-secondary">
-                    <span class="dashicons dashicons-download"></span>
-                    <?php _e( 'Download Report (CSV)', 'image-optimization' ); ?>
-                </button>
+            
+            <!-- Delete by Type Buttons -->
+            <div style="margin-bottom: 15px; padding: 15px; background: #f0f6fc; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h4 style="margin-top: 0; margin-bottom: 10px;">
+                    <span class="dashicons dashicons-filter"></span>
+                    <?php _e( 'ลบตามประเภท', 'image-optimization' ); ?>
+                </h4>
+                <p style="margin: 0 0 10px 0; font-size: 13px; color: #646970;">
+                    <?php _e( 'ลบไฟล์ทั้งหมดในแต่ละประเภทโดยไม่ต้องเลือกทีละไฟล์', 'image-optimization' ); ?>
+                </p>
+                <div>
+                    <button type="button" id="io-delete-thumbnails" class="button button-secondary" style="margin-right: 10px;">
+                        <span class="dashicons dashicons-images-alt2"></span>
+                        <?php _e( 'ลบ Thumbnails ทั้งหมด', 'image-optimization' ); ?>
+                        <span id="io-delete-thumbnails-count" class="count-badge" style="margin-left: 5px;">0</span>
+                    </button>
+                    <button type="button" id="io-delete-webp" class="button button-secondary" style="margin-right: 10px;">
+                        <span class="dashicons dashicons-format-image"></span>
+                        <?php _e( 'ลบ WebP ทั้งหมด', 'image-optimization' ); ?>
+                        <span id="io-delete-webp-count" class="count-badge" style="margin-left: 5px;">0</span>
+                    </button>
+                    <button type="button" id="io-delete-orphaned" class="button button-secondary">
+                        <span class="dashicons dashicons-warning"></span>
+                        <?php _e( 'ลบ Orphaned Images ทั้งหมด', 'image-optimization' ); ?>
+                        <span id="io-delete-orphaned-count" class="count-badge" style="margin-left: 5px;">0</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Manual Selection Buttons -->
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin-bottom: 10px;">
+                    <span class="dashicons dashicons-admin-tools"></span>
+                    <?php _e( 'ลบแบบเลือกเอง', 'image-optimization' ); ?>
+                </h4>
+                <div>
+                    <button type="button" id="io-delete-selected" class="button button-secondary" disabled>
+                        <span class="dashicons dashicons-trash"></span>
+                        <?php _e( 'Delete Selected', 'image-optimization' ); ?>
+                    </button>
+                    <button type="button" id="io-delete-all" class="button button-danger">
+                        <span class="dashicons dashicons-warning"></span>
+                        <?php _e( 'Delete All', 'image-optimization' ); ?>
+                    </button>
+                    <button type="button" id="io-download-report" class="button button-secondary">
+                        <span class="dashicons dashicons-download"></span>
+                        <?php _e( 'Download Report (CSV)', 'image-optimization' ); ?>
+                    </button>
+                </div>
             </div>
             
             <!-- Delete Progress -->

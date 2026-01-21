@@ -193,7 +193,7 @@ class IO_Settings_Page {
     public function render() {
         // Get active tab
         $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'optimization';
-        if ( ! in_array( $active_tab, array( 'optimization', 'cleanup' ), true ) ) {
+        if ( ! in_array( $active_tab, array( 'optimization', 'cleanup', 'regenerate' ), true ) ) {
             $active_tab = 'optimization';
         }
         
@@ -234,6 +234,12 @@ class IO_Settings_Page {
                     <?php _e( 'Image Optimization', 'image-optimization' ); ?>
                 </a>
                 <a href="#" 
+                   class="io-main-tab nav-tab <?php echo $active_tab === 'regenerate' ? 'nav-tab-active' : ''; ?>" 
+                   data-tab="regenerate">
+                    <span class="dashicons dashicons-update"></span>
+                    <?php _e( 'Regenerate Images', 'image-optimization' ); ?>
+                </a>
+                <a href="#" 
                    class="io-main-tab nav-tab <?php echo $active_tab === 'cleanup' ? 'nav-tab-active' : ''; ?>" 
                    data-tab="cleanup">
                     <span class="dashicons dashicons-trash"></span>
@@ -250,6 +256,11 @@ class IO_Settings_Page {
                 </form>
             </div>
             
+            <!-- Regenerate Tab Content -->
+            <div id="io-tab-regenerate" class="io-main-tab-content" style="<?php echo $active_tab === 'regenerate' ? '' : 'display: none;'; ?>">
+                <?php $this->render_regenerate_tab(); ?>
+            </div>
+            
             <!-- Cleanup Tab Content -->
             <div id="io-tab-cleanup" class="io-main-tab-content" style="<?php echo $active_tab === 'cleanup' ? '' : 'display: none;'; ?>">
                 <?php $this->render_cleanup_tab(); ?>
@@ -263,6 +274,13 @@ class IO_Settings_Page {
      */
     private function render_optimization_tab( $auto_resize, $max_width, $max_height, $maintain_aspect, $jpeg_quality, $max_file_size, $webp_enabled, $webp_quality, $strip_exif, $image_stats, $webp_supported ) {
         require_once IO_PLUGIN_DIR . 'includes/admin/views/optimization-tab.php';
+    }
+    
+    /**
+     * Render regenerate tab
+     */
+    private function render_regenerate_tab() {
+        require_once IO_PLUGIN_DIR . 'includes/admin/views/regenerate-tab.php';
     }
     
     /**

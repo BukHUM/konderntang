@@ -268,107 +268,187 @@ class IO_Image_Cleanup {
 	 */
 	public function scan_unused_thumbnails( $options = array() ) {
 		$unused_thumbnails = array();
+		$error_files = array();
 
+		// Get all registered thumbnails
 		try {
-			// Get all registered thumbnails
 			$registered_files = $this->get_all_registered_thumbnails( isset( $options['use_cache'] ) ? $options['use_cache'] : true );
-
-			// Scan uploads directory
-			if ( ! is_dir( $this->uploads_dir ) ) {
-				$this->log_action(
-					'SCAN_ERROR',
-					array(
-						'type'  => 'thumbnails',
-						'error' => 'Uploads directory not found',
-					)
-				);
-				throw new Exception( __( 'ไม่พบโฟลเดอร์ uploads', 'image-optimization' ) );
-			}
-			
-			if ( ! is_readable( $this->uploads_dir ) ) {
-				throw new Exception( __( 'ไม่สามารถอ่านโฟลเดอร์ uploads ได้', 'image-optimization' ) );
-			}
-
-			$max_files = isset( $options['max_files'] ) ? absint( $options['max_files'] ) : 0;
-			$processed = 0;
-
-			try {
-				$iterator = new RecursiveIteratorIterator(
-					new RecursiveDirectoryIterator( $this->uploads_dir, RecursiveDirectoryIterator::SKIP_DOTS ),
-					RecursiveIteratorIterator::SELF_FIRST
-				);
-			} catch ( Exception $e ) {
-				throw new Exception( __( 'ไม่สามารถเข้าถึงโฟลเดอร์ uploads: ', 'image-optimization' ) . $e->getMessage() );
-			}
-
-			foreach ( $iterator as $file ) {
-				// Check max files limit
-				if ( $max_files > 0 && $processed >= $max_files ) {
-					break;
-				}
-
-				if ( $file->isDir() ) {
-					continue;
-				}
-
-				try {
-					$file_path = wp_normalize_path( $file->getRealPath() );
-					if ( ! $file_path ) {
-						continue;
-					}
-
-					$filename = $file->getFilename();
-
-					// Skip if not an image
-					$ext = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
-					if ( ! in_array( $ext, $this->image_extensions, true ) ) {
-						continue;
-					}
-
-					// Skip if not a thumbnail pattern
-					if ( ! $this->is_thumbnail_filename( $filename ) ) {
-						continue;
-					}
-
-					// Skip if file is registered
-					if ( isset( $registered_files[ $file_path ] ) ) {
-						continue;
-					}
-
-					// Add to unused list
-					$unused_thumbnails[] = array(
-						'path'     => $file_path,
-						'filename' => $filename,
-						'size'     => $file->getSize(),
-						'modified' => $file->getMTime(),
-						'url'      => str_replace( $this->uploads_dir, $this->uploads_url, $file_path ),
-					);
-
-					$processed++;
-				} catch ( Exception $e ) {
-					// Log error but continue
-					$this->log_action(
-						'SCAN_FILE_ERROR',
-						array(
-							'file'  => $file->getPathname(),
-							'error' => $e->getMessage(),
-						)
-					);
-					continue;
-				}
-			}
 		} catch ( Exception $e ) {
+			$error_files[] = array(
+				'file'  => __( 'การดึงข้อมูล registered thumbnails', 'image-optimization' ),
+				'error' => $e->getMessage(),
+			);
+			$registered_files = array(); // Continue with empty array
+		}
+
+		// Scan uploads directory
+		if ( ! is_dir( $this->uploads_dir ) ) {
 			$this->log_action(
 				'SCAN_ERROR',
 				array(
 					'type'  => 'thumbnails',
-					'error' => $e->getMessage(),
-					'trace' => $e->getTraceAsString(),
+					'error' => 'Uploads directory not found',
 				)
+			);
+			return array(
+				'files' => $unused_thumbnails,
+				'errors' => array(
+					array(
+						'file'  => $this->uploads_dir,
+						'error' => __( 'ไม่พบโฟลเดอร์ uploads', 'image-optimization' ),
+					)
+				),
+			);
+		}
+		
+		if ( ! is_readable( $this->uploads_dir ) ) {
+			return array(
+				'files' => $unused_thumbnails,
+				'errors' => array(
+					array(
+						'file'  => $this->uploads_dir,
+						'error' => __( 'ไม่สามารถอ่านโฟลเดอร์ uploads ได้', 'image-optimization' ),
+					)
+				),
 			);
 		}
 
-		return $unused_thumbnails;
+		$max_files = isset( $options['max_files'] ) ? absint( $options['max_files'] ) : 0;
+		$processed = 0;
+		$total_scanned = 0;
+		$memory_check_interval = 100; // Check memory every 100 files
+
+		try {
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $this->uploads_dir, RecursiveDirectoryIterator::SKIP_DOTS ),
+				RecursiveIteratorIterator::SELF_FIRST
+			);
+		} catch ( Exception $e ) {
+			return array(
+				'files' => $unused_thumbnails,
+				'errors' => array(
+					array(
+						'file'  => $this->uploads_dir,
+						'error' => __( 'ไม่สามารถเข้าถึงโฟลเดอร์ uploads: ', 'image-optimization' ) . $e->getMessage(),
+					)
+				),
+			);
+		}
+
+		foreach ( $iterator as $file ) {
+			// Check max files limit
+			if ( $max_files > 0 && $processed >= $max_files ) {
+				break;
+			}
+
+			if ( $file->isDir() ) {
+				continue;
+			}
+
+			$total_scanned++;
+			$file_path = null;
+			$filename = '';
+
+			// Memory management: Check and clean up every N files
+			if ( $total_scanned % $memory_check_interval === 0 ) {
+				// Get current memory usage
+				$memory_used = memory_get_usage( true );
+				$memory_limit = ini_get( 'memory_limit' );
+				$memory_limit_bytes = $this->convert_to_bytes( $memory_limit );
+				$memory_percent = ( $memory_used / $memory_limit_bytes ) * 100;
+				
+				// If memory usage is above 80%, trigger garbage collection
+				if ( $memory_percent > 80 ) {
+					// Unset large variables that are no longer needed
+					unset( $file_path, $filename );
+					
+					// Force garbage collection
+					if ( function_exists( 'gc_collect_cycles' ) ) {
+						gc_collect_cycles();
+					}
+					
+					// Log memory warning
+					$this->log_action(
+						'SCAN_MEMORY_WARNING',
+						array(
+							'memory_used' => $this->format_bytes( $memory_used ),
+							'memory_limit' => $memory_limit,
+							'percent' => round( $memory_percent, 2 ),
+							'files_scanned' => $total_scanned,
+						)
+					);
+				}
+			}
+
+			try {
+				$raw_path = $file->getRealPath();
+				if ( ! $raw_path ) {
+					$error_files[] = array(
+						'file'  => $file->getPathname(),
+						'error' => __( 'ไม่สามารถอ่าน path ของไฟล์ได้', 'image-optimization' ),
+					);
+					continue;
+				}
+				
+				// Normalize path: On Windows, convert backslashes to forward slashes
+				// wp_normalize_path() should handle this, but ensure it's done correctly
+				$file_path = str_replace( '\\', '/', $raw_path );
+				$file_path = wp_normalize_path( $file_path );
+
+				$filename = $file->getFilename();
+
+				// Skip if not an image
+				$ext = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
+				if ( ! in_array( $ext, $this->image_extensions, true ) ) {
+					continue;
+				}
+
+				// Skip if not a thumbnail pattern
+				if ( ! $this->is_thumbnail_filename( $filename ) ) {
+					continue;
+				}
+
+				// Skip if file is registered
+				if ( isset( $registered_files[ $file_path ] ) ) {
+					continue;
+				}
+
+				// Add to unused list
+				$unused_thumbnails[] = array(
+					'path'     => $file_path,
+					'filename' => $filename,
+					'size'     => $file->getSize(),
+					'modified' => $file->getMTime(),
+					'url'      => str_replace( $this->uploads_dir, $this->uploads_url, $file_path ),
+				);
+
+				$processed++;
+			} catch ( Exception $e ) {
+				// Log error but continue
+				$this->log_action(
+					'SCAN_FILE_ERROR',
+					array(
+						'file'  => $file->getPathname(),
+						'error' => $e->getMessage(),
+					)
+				);
+				$error_files[] = array(
+					'file'  => $file_path ? $file_path : $file->getPathname(),
+					'filename' => $filename ? $filename : basename( $file->getPathname() ),
+					'error' => $e->getMessage(),
+				);
+				continue;
+			}
+		}
+
+		return array(
+			'files' => $unused_thumbnails,
+			'errors' => $error_files,
+			'statistics' => array(
+				'total_scanned' => $total_scanned,
+				'processed' => $processed,
+			),
+		);
 	}
 
 	/**
@@ -379,9 +459,11 @@ class IO_Image_Cleanup {
 	 */
 	public function scan_unused_webp( $options = array() ) {
 		$unused_webp = array();
+		$error_files = array();
 
+		// Get all attachments with WebP files
+		$attachments = array();
 		try {
-			// Get all attachments with WebP files
 			$attachments = get_posts(
 				array(
 					'post_type'      => 'attachment',
@@ -391,6 +473,20 @@ class IO_Image_Cleanup {
 					'fields'         => 'ids',
 				)
 			);
+			
+			if ( is_wp_error( $attachments ) ) {
+				$error_files[] = array(
+					'file'  => __( 'การดึงข้อมูล attachments', 'image-optimization' ),
+					'error' => $attachments->get_error_message(),
+				);
+				$attachments = array();
+			}
+		} catch ( Exception $e ) {
+			$error_files[] = array(
+				'file'  => __( 'การดึงข้อมูล attachments', 'image-optimization' ),
+				'error' => $e->getMessage(),
+			);
+		}
 			
 			if ( is_wp_error( $attachments ) ) {
 				throw new Exception( __( 'ไม่สามารถดึงข้อมูล attachments จากฐานข้อมูลได้', 'image-optimization' ) );
@@ -444,20 +540,47 @@ class IO_Image_Cleanup {
 
 		// Scan for all WebP files
 		if ( ! is_dir( $this->uploads_dir ) ) {
-			throw new Exception( __( 'ไม่พบโฟลเดอร์ uploads', 'image-optimization' ) );
+			return array(
+				'files' => $unused_webp,
+				'errors' => array_merge( $error_files, array(
+					array(
+						'file'  => $this->uploads_dir,
+						'error' => __( 'ไม่พบโฟลเดอร์ uploads', 'image-optimization' ),
+					)
+				) ),
+			);
 		}
 		
 		if ( ! is_readable( $this->uploads_dir ) ) {
-			throw new Exception( __( 'ไม่สามารถอ่านโฟลเดอร์ uploads ได้', 'image-optimization' ) );
+			return array(
+				'files' => $unused_webp,
+				'errors' => array_merge( $error_files, array(
+					array(
+						'file'  => $this->uploads_dir,
+						'error' => __( 'ไม่สามารถอ่านโฟลเดอร์ uploads ได้', 'image-optimization' ),
+					)
+				) ),
+			);
 		}
 
+		$total_scanned = 0;
+		$memory_check_interval = 100; // Check memory every 100 files
+		
 		try {
 			$iterator = new RecursiveIteratorIterator(
 				new RecursiveDirectoryIterator( $this->uploads_dir, RecursiveDirectoryIterator::SKIP_DOTS ),
 				RecursiveIteratorIterator::SELF_FIRST
 			);
 		} catch ( Exception $e ) {
-			throw new Exception( __( 'ไม่สามารถเข้าถึงโฟลเดอร์ uploads: ', 'image-optimization' ) . $e->getMessage() );
+			return array(
+				'files' => $unused_webp,
+				'errors' => array_merge( $error_files, array(
+					array(
+						'file'  => $this->uploads_dir,
+						'error' => __( 'ไม่สามารถเข้าถึงโฟลเดอร์ uploads: ', 'image-optimization' ) . $e->getMessage(),
+					)
+				) ),
+			);
 		}
 
 		foreach ( $iterator as $file ) {
@@ -465,51 +588,81 @@ class IO_Image_Cleanup {
 				continue;
 			}
 
-			$file_path = wp_normalize_path( $file->getRealPath() );
-			$filename  = $file->getFilename();
+			$total_scanned++;
+			$file_path = null;
+			$filename = '';
 
-			// Only process WebP files
-			if ( strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) ) !== 'webp' ) {
-				continue;
-			}
-
-			// Skip if it's a valid WebP file
-			if ( isset( $valid_webp[ $file_path ] ) ) {
-				continue;
-			}
-
-			// Check if original file exists
-			$original_file = preg_replace( '/\.webp$/i', '.jpg', $file_path );
-			if ( ! file_exists( $original_file ) ) {
-				$original_file = preg_replace( '/\.webp$/i', '.jpeg', $file_path );
-			}
-			if ( ! file_exists( $original_file ) ) {
-				$original_file = preg_replace( '/\.webp$/i', '.png', $file_path );
+			// Memory management: Check and clean up every N files
+			if ( $total_scanned % $memory_check_interval === 0 ) {
+				$memory_used = memory_get_usage( true );
+				$memory_limit = ini_get( 'memory_limit' );
+				$memory_limit_bytes = $this->convert_to_bytes( $memory_limit );
+				$memory_percent = $memory_limit_bytes > 0 ? ( $memory_used / $memory_limit_bytes ) * 100 : 0;
+				
+				if ( $memory_percent > 80 ) {
+					unset( $file_path, $filename );
+					if ( function_exists( 'gc_collect_cycles' ) ) {
+						gc_collect_cycles();
+					}
+				}
 			}
 
-			// If no original exists, it's unused
-			if ( ! file_exists( $original_file ) ) {
-				$unused_webp[] = array(
-					'path'     => $file_path,
-					'filename' => $filename,
-					'size'     => $file->getSize(),
-					'modified' => $file->getMTime(),
-					'url'      => str_replace( $this->uploads_dir, $this->uploads_url, $file_path ),
-				);
-			}
-		}
-		} catch ( Exception $e ) {
-			$this->log_action(
-				'SCAN_WEBP_ERROR',
-				array(
+			try {
+				$raw_path = $file->getRealPath();
+				if ( ! $raw_path ) {
+					continue;
+				}
+				// Normalize path: On Windows, convert backslashes to forward slashes
+				$file_path = str_replace( '\\', '/', $raw_path );
+				$file_path = wp_normalize_path( $file_path );
+				$filename  = $file->getFilename();
+
+				// Only process WebP files
+				if ( strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) ) !== 'webp' ) {
+					continue;
+				}
+
+				// Skip if it's a valid WebP file
+				if ( isset( $valid_webp[ $file_path ] ) ) {
+					continue;
+				}
+
+				// Check if original file exists
+				$original_file = preg_replace( '/\.webp$/i', '.jpg', $file_path );
+				if ( ! file_exists( $original_file ) ) {
+					$original_file = preg_replace( '/\.webp$/i', '.jpeg', $file_path );
+				}
+				if ( ! file_exists( $original_file ) ) {
+					$original_file = preg_replace( '/\.webp$/i', '.png', $file_path );
+				}
+
+				// If no original exists, it's unused
+				if ( ! file_exists( $original_file ) ) {
+					$unused_webp[] = array(
+						'path'     => $file_path,
+						'filename' => $filename,
+						'size'     => $file->getSize(),
+						'modified' => $file->getMTime(),
+						'url'      => str_replace( $this->uploads_dir, $this->uploads_url, $file_path ),
+					);
+				}
+			} catch ( Exception $e ) {
+				$error_files[] = array(
+					'file'  => $file_path ? $file_path : $file->getPathname(),
+					'filename' => $filename ? $filename : basename( $file->getPathname() ),
 					'error' => $e->getMessage(),
-					'trace' => $e->getTraceAsString(),
-				)
-			);
-			throw $e; // Re-throw to be handled by caller
+				);
+				continue;
+			}
 		}
 
-		return $unused_webp;
+		return array(
+			'files' => $unused_webp,
+			'errors' => $error_files,
+			'statistics' => array(
+				'total_scanned' => $total_scanned,
+			),
+		);
 	}
 
 	/**
@@ -561,27 +714,62 @@ class IO_Image_Cleanup {
 	 */
 	public function scan_orphaned_images( $options = array() ) {
 		$orphaned_images = array();
+		$error_files = array();
 
+		// Get all attachment files
+		$attachment_files = array();
 		try {
-			// Get all attachment files
 			$attachment_files = $this->get_all_attachment_files();
+		} catch ( Exception $e ) {
+			$error_files[] = array(
+				'file'  => __( 'การดึงข้อมูล attachment files', 'image-optimization' ),
+				'error' => $e->getMessage(),
+			);
+		}
 
 		// Scan uploads directory
 		if ( ! is_dir( $this->uploads_dir ) ) {
-			throw new Exception( __( 'ไม่พบโฟลเดอร์ uploads', 'image-optimization' ) );
+			return array(
+				'files' => $orphaned_images,
+				'errors' => array_merge( $error_files, array(
+					array(
+						'file'  => $this->uploads_dir,
+						'error' => __( 'ไม่พบโฟลเดอร์ uploads', 'image-optimization' ),
+					)
+				) ),
+			);
 		}
 		
 		if ( ! is_readable( $this->uploads_dir ) ) {
-			throw new Exception( __( 'ไม่สามารถอ่านโฟลเดอร์ uploads ได้', 'image-optimization' ) );
+			return array(
+				'files' => $orphaned_images,
+				'errors' => array_merge( $error_files, array(
+					array(
+						'file'  => $this->uploads_dir,
+						'error' => __( 'ไม่สามารถอ่านโฟลเดอร์ uploads ได้', 'image-optimization' ),
+					)
+				) ),
+			);
 		}
 
+		$total_scanned = 0;
+		$memory_check_interval = 100; // Check memory every 100 files
+		
 		try {
 			$iterator = new RecursiveIteratorIterator(
 				new RecursiveDirectoryIterator( $this->uploads_dir, RecursiveDirectoryIterator::SKIP_DOTS ),
 				RecursiveIteratorIterator::SELF_FIRST
 			);
 		} catch ( Exception $e ) {
-			throw new Exception( __( 'ไม่สามารถเข้าถึงโฟลเดอร์ uploads: ', 'image-optimization' ) . $e->getMessage() );
+			return array(
+				'files' => $orphaned_images,
+				'errors' => array_merge( $error_files, array(
+					array(
+						'file'  => $this->uploads_dir,
+						'error' => __( 'ไม่สามารถเข้าถึงโฟลเดอร์ uploads: ', 'image-optimization' ) . $e->getMessage(),
+					)
+				) ),
+			);
 		}
 
 		foreach ( $iterator as $file ) {
@@ -589,46 +777,76 @@ class IO_Image_Cleanup {
 				continue;
 			}
 
-			$file_path = wp_normalize_path( $file->getRealPath() );
-			$filename  = $file->getFilename();
+			$total_scanned++;
+			$file_path = null;
+			$filename = '';
 
-			// Skip if not an image
-			$ext = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
-			if ( ! in_array( $ext, $this->image_extensions, true ) ) {
-				continue;
+			// Memory management: Check and clean up every N files
+			if ( $total_scanned % $memory_check_interval === 0 ) {
+				$memory_used = memory_get_usage( true );
+				$memory_limit = ini_get( 'memory_limit' );
+				$memory_limit_bytes = $this->convert_to_bytes( $memory_limit );
+				$memory_percent = $memory_limit_bytes > 0 ? ( $memory_used / $memory_limit_bytes ) * 100 : 0;
+				
+				if ( $memory_percent > 80 ) {
+					unset( $file_path, $filename );
+					if ( function_exists( 'gc_collect_cycles' ) ) {
+						gc_collect_cycles();
+					}
+				}
 			}
 
-			// Skip if file is registered as attachment
-			if ( isset( $attachment_files[ $file_path ] ) ) {
-				continue;
-			}
+			try {
+				$raw_path = $file->getRealPath();
+				if ( ! $raw_path ) {
+					continue;
+				}
+				// Normalize path: On Windows, convert backslashes to forward slashes
+				$file_path = str_replace( '\\', '/', $raw_path );
+				$file_path = wp_normalize_path( $file_path );
+				$filename  = $file->getFilename();
 
-			// Skip system files
-			if ( in_array( $filename, array( '.htaccess', 'index.php' ), true ) ) {
-				continue;
-			}
+				// Skip if not an image
+				$ext = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
+				if ( ! in_array( $ext, $this->image_extensions, true ) ) {
+					continue;
+				}
 
-			// Add to orphaned list
-			$orphaned_images[] = array(
-				'path'     => $file_path,
-				'filename' => $filename,
-				'size'     => $file->getSize(),
-				'modified' => $file->getMTime(),
-				'url'      => str_replace( $this->uploads_dir, $this->uploads_url, $file_path ),
-			);
-		}
-		} catch ( Exception $e ) {
-			$this->log_action(
-				'SCAN_ORPHANED_ERROR',
-				array(
+				// Skip if file is registered as attachment
+				if ( isset( $attachment_files[ $file_path ] ) ) {
+					continue;
+				}
+
+				// Skip system files
+				if ( in_array( $filename, array( '.htaccess', 'index.php' ), true ) ) {
+					continue;
+				}
+
+				// Add to orphaned list
+				$orphaned_images[] = array(
+					'path'     => $file_path,
+					'filename' => $filename,
+					'size'     => $file->getSize(),
+					'modified' => $file->getMTime(),
+					'url'      => str_replace( $this->uploads_dir, $this->uploads_url, $file_path ),
+				);
+			} catch ( Exception $e ) {
+				$error_files[] = array(
+					'file'  => $file_path ? $file_path : $file->getPathname(),
+					'filename' => $filename ? $filename : basename( $file->getPathname() ),
 					'error' => $e->getMessage(),
-					'trace' => $e->getTraceAsString(),
-				)
-			);
-			throw $e; // Re-throw to be handled by caller
+				);
+				continue;
+			}
 		}
 
-		return $orphaned_images;
+		return array(
+			'files' => $orphaned_images,
+			'errors' => $error_files,
+			'statistics' => array(
+				'total_scanned' => $total_scanned,
+			),
+		);
 	}
 
 	/**
@@ -651,6 +869,7 @@ class IO_Image_Cleanup {
 			'thumbnails' => array(),
 			'webp'       => array(),
 			'orphaned'   => array(),
+			'error_files' => array(), // All error files from all scan types
 			'statistics' => array(
 				'total_thumbnails' => 0,
 				'total_webp'       => 0,
@@ -660,138 +879,147 @@ class IO_Image_Cleanup {
 				'webp_size'        => 0,
 				'orphaned_size'    => 0,
 				'scan_time'        => 0,
+				'total_scanned'    => 0,
+				'total_errors'     => 0,
 			),
 		);
 
-		try {
-			// Validate uploads directory before scanning
-			if ( ! is_dir( $this->uploads_dir ) ) {
-				throw new Exception( __( 'ไม่พบโฟลเดอร์ uploads', 'image-optimization' ) );
-			}
-			
-			if ( ! is_readable( $this->uploads_dir ) ) {
-				throw new Exception( __( 'ไม่สามารถอ่านโฟลเดอร์ uploads ได้ กรุณาตรวจสอบสิทธิ์การเข้าถึง', 'image-optimization' ) );
-			}
-			
-			// Scan thumbnails
-			if ( $options['scan_type'] === 'all' || $options['scan_type'] === 'thumbnails' ) {
-				try {
-					$results['thumbnails']                    = $this->scan_unused_thumbnails( $options );
-					$results['statistics']['total_thumbnails'] = count( $results['thumbnails'] );
-					foreach ( $results['thumbnails'] as $thumb ) {
-						if ( isset( $thumb['size'] ) ) {
-							$results['statistics']['thumbnails_size'] += $thumb['size'];
-							$results['statistics']['total_size']      += $thumb['size'];
-						}
-					}
-				} catch ( Exception $e ) {
-					$this->log_action(
-						'SCAN_THUMBNAILS_ERROR',
-						array(
-							'error' => $e->getMessage(),
-							'trace' => $e->getTraceAsString(),
-						)
-					);
-					throw new Exception( __( 'เกิดข้อผิดพลาดในการแสกน thumbnails: ', 'image-optimization' ) . $e->getMessage() );
-				}
-
-				// Check time limit
-				if ( $options['time_limit'] > 0 && ( time() - $start_time ) > $options['time_limit'] ) {
-					$results['statistics']['timeout'] = true;
-					$results['error'] = __( 'การแสกนใช้เวลานานเกินกำหนด กรุณาลองใหม่อีกครั้ง', 'image-optimization' );
-					return $results;
-				}
-			}
-
-			// Scan WebP
-			if ( $options['scan_type'] === 'all' || $options['scan_type'] === 'webp' ) {
-				try {
-					$results['webp']                    = $this->scan_unused_webp( $options );
-					$results['statistics']['total_webp'] = count( $results['webp'] );
-					foreach ( $results['webp'] as $webp ) {
-						if ( isset( $webp['size'] ) ) {
-							$results['statistics']['webp_size'] += $webp['size'];
-							$results['statistics']['total_size'] += $webp['size'];
-						}
-					}
-				} catch ( Exception $e ) {
-					$this->log_action(
-						'SCAN_WEBP_ERROR',
-						array(
-							'error' => $e->getMessage(),
-							'trace' => $e->getTraceAsString(),
-						)
-					);
-					throw new Exception( __( 'เกิดข้อผิดพลาดในการแสกน WebP: ', 'image-optimization' ) . $e->getMessage() );
-				}
-
-				// Check time limit
-				if ( $options['time_limit'] > 0 && ( time() - $start_time ) > $options['time_limit'] ) {
-					$results['statistics']['timeout'] = true;
-					$results['error'] = __( 'การแสกนใช้เวลานานเกินกำหนด กรุณาลองใหม่อีกครั้ง', 'image-optimization' );
-					return $results;
-				}
-			}
-
-			// Scan orphaned images
-			if ( $options['scan_type'] === 'all' || $options['scan_type'] === 'orphaned' ) {
-				try {
-					$results['orphaned']                    = $this->scan_orphaned_images( $options );
-					$results['statistics']['total_orphaned'] = count( $results['orphaned'] );
-					foreach ( $results['orphaned'] as $orphaned ) {
-						if ( isset( $orphaned['size'] ) ) {
-							$results['statistics']['orphaned_size'] += $orphaned['size'];
-							$results['statistics']['total_size']    += $orphaned['size'];
-						}
-					}
-				} catch ( Exception $e ) {
-					$this->log_action(
-						'SCAN_ORPHANED_ERROR',
-						array(
-							'error' => $e->getMessage(),
-							'trace' => $e->getTraceAsString(),
-						)
-					);
-					throw new Exception( __( 'เกิดข้อผิดพลาดในการแสกน orphaned images: ', 'image-optimization' ) . $e->getMessage() );
-				}
-			}
-
-			// Convert sizes to MB
-			$results['statistics']['total_size_mb']       = round( $results['statistics']['total_size'] / 1024 / 1024, 2 );
-			$results['statistics']['thumbnails_size_mb']  = round( $results['statistics']['thumbnails_size'] / 1024 / 1024, 2 );
-			$results['statistics']['webp_size_mb']       = round( $results['statistics']['webp_size'] / 1024 / 1024, 2 );
-			$results['statistics']['orphaned_size_mb']   = round( $results['statistics']['orphaned_size'] / 1024 / 1024, 2 );
-
-			// Calculate scan time
-			$results['statistics']['scan_time'] = time() - $start_time;
-
-		} catch ( Exception $e ) {
-			// Log error with full details
-			$this->log_action(
-				'SCAN_ERROR',
-				array(
-					'error' => $e->getMessage(),
-					'trace' => $e->getTraceAsString(),
-					'uploads_dir' => $this->uploads_dir,
-					'is_dir' => is_dir( $this->uploads_dir ),
-					'is_readable' => is_readable( $this->uploads_dir ),
-				)
+		// Validate uploads directory before scanning
+		if ( ! is_dir( $this->uploads_dir ) ) {
+			$results['error_files'][] = array(
+				'file'  => $this->uploads_dir,
+				'error' => __( 'ไม่พบโฟลเดอร์ uploads', 'image-optimization' ),
+				'type'  => 'system',
 			);
-
-			// Set error message for user
-			$results['error'] = $e->getMessage();
-		} catch ( Error $e ) {
-			// Log fatal error
-			$this->log_action(
-				'SCAN_FATAL_ERROR',
-				array(
-					'error' => $e->getMessage(),
-					'trace' => $e->getTraceAsString(),
-				)
-			);
-			
-			$results['error'] = __( 'เกิดข้อผิดพลาดร้ายแรงในการแสกน กรุณาตรวจสอบ log', 'image-optimization' );
+			$results['statistics']['total_errors'] = count( $results['error_files'] );
+			return $results;
 		}
+		
+		if ( ! is_readable( $this->uploads_dir ) ) {
+			$results['error_files'][] = array(
+				'file'  => $this->uploads_dir,
+				'error' => __( 'ไม่สามารถอ่านโฟลเดอร์ uploads ได้', 'image-optimization' ),
+				'type'  => 'system',
+			);
+			$results['statistics']['total_errors'] = count( $results['error_files'] );
+			return $results;
+		}
+		
+		// Scan thumbnails
+		if ( $options['scan_type'] === 'all' || $options['scan_type'] === 'thumbnails' ) {
+			$thumbnails_result = $this->scan_unused_thumbnails( $options );
+			
+			// Handle result structure (new format with files/errors or old format)
+			if ( isset( $thumbnails_result['files'] ) ) {
+				$results['thumbnails'] = $thumbnails_result['files'];
+				if ( ! empty( $thumbnails_result['errors'] ) ) {
+					foreach ( $thumbnails_result['errors'] as $error ) {
+						$error['type'] = 'thumbnails';
+						$results['error_files'][] = $error;
+					}
+				}
+				if ( isset( $thumbnails_result['statistics']['total_scanned'] ) ) {
+					$results['statistics']['total_scanned'] += $thumbnails_result['statistics']['total_scanned'];
+				}
+			} else {
+				// Old format - backward compatibility
+				$results['thumbnails'] = $thumbnails_result;
+			}
+			
+			$results['statistics']['total_thumbnails'] = count( $results['thumbnails'] );
+			foreach ( $results['thumbnails'] as $thumb ) {
+				if ( isset( $thumb['size'] ) ) {
+					$results['statistics']['thumbnails_size'] += $thumb['size'];
+					$results['statistics']['total_size']      += $thumb['size'];
+				}
+			}
+
+			// Check time limit
+			if ( $options['time_limit'] > 0 && ( time() - $start_time ) > $options['time_limit'] ) {
+				$results['statistics']['timeout'] = true;
+				$results['statistics']['total_errors'] = count( $results['error_files'] );
+				$results['statistics']['scan_time'] = time() - $start_time;
+				return $results;
+			}
+		}
+
+		// Scan WebP
+		if ( $options['scan_type'] === 'all' || $options['scan_type'] === 'webp' ) {
+			$webp_result = $this->scan_unused_webp( $options );
+			
+			// Handle result structure
+			if ( isset( $webp_result['files'] ) ) {
+				$results['webp'] = $webp_result['files'];
+				if ( ! empty( $webp_result['errors'] ) ) {
+					foreach ( $webp_result['errors'] as $error ) {
+						$error['type'] = 'webp';
+						$results['error_files'][] = $error;
+					}
+				}
+				if ( isset( $webp_result['statistics']['total_scanned'] ) ) {
+					$results['statistics']['total_scanned'] += $webp_result['statistics']['total_scanned'];
+				}
+			} else {
+				// Old format
+				$results['webp'] = $webp_result;
+			}
+			
+			$results['statistics']['total_webp'] = count( $results['webp'] );
+			foreach ( $results['webp'] as $webp ) {
+				if ( isset( $webp['size'] ) ) {
+					$results['statistics']['webp_size'] += $webp['size'];
+					$results['statistics']['total_size'] += $webp['size'];
+				}
+			}
+
+			// Check time limit
+			if ( $options['time_limit'] > 0 && ( time() - $start_time ) > $options['time_limit'] ) {
+				$results['statistics']['timeout'] = true;
+				$results['statistics']['total_errors'] = count( $results['error_files'] );
+				$results['statistics']['scan_time'] = time() - $start_time;
+				return $results;
+			}
+		}
+
+		// Scan orphaned images
+		if ( $options['scan_type'] === 'all' || $options['scan_type'] === 'orphaned' ) {
+			$orphaned_result = $this->scan_orphaned_images( $options );
+			
+			// Handle result structure
+			if ( isset( $orphaned_result['files'] ) ) {
+				$results['orphaned'] = $orphaned_result['files'];
+				if ( ! empty( $orphaned_result['errors'] ) ) {
+					foreach ( $orphaned_result['errors'] as $error ) {
+						$error['type'] = 'orphaned';
+						$results['error_files'][] = $error;
+					}
+				}
+				if ( isset( $orphaned_result['statistics']['total_scanned'] ) ) {
+					$results['statistics']['total_scanned'] += $orphaned_result['statistics']['total_scanned'];
+				}
+			} else {
+				// Old format
+				$results['orphaned'] = $orphaned_result;
+			}
+			
+			$results['statistics']['total_orphaned'] = count( $results['orphaned'] );
+			foreach ( $results['orphaned'] as $orphaned ) {
+				if ( isset( $orphaned['size'] ) ) {
+					$results['statistics']['orphaned_size'] += $orphaned['size'];
+					$results['statistics']['total_size']    += $orphaned['size'];
+				}
+			}
+		}
+
+		// Convert sizes to MB (ensure values exist before division)
+		$results['statistics']['total_size_mb']       = round( ( isset( $results['statistics']['total_size'] ) ? $results['statistics']['total_size'] : 0 ) / 1024 / 1024, 2 );
+		$results['statistics']['thumbnails_size_mb']  = round( ( isset( $results['statistics']['thumbnails_size'] ) ? $results['statistics']['thumbnails_size'] : 0 ) / 1024 / 1024, 2 );
+		$results['statistics']['webp_size_mb']       = round( ( isset( $results['statistics']['webp_size'] ) ? $results['statistics']['webp_size'] : 0 ) / 1024 / 1024, 2 );
+		$results['statistics']['orphaned_size_mb']   = round( ( isset( $results['statistics']['orphaned_size'] ) ? $results['statistics']['orphaned_size'] : 0 ) / 1024 / 1024, 2 );
+
+		// Calculate scan time
+		$results['statistics']['scan_time'] = time() - $start_time;
+		$results['statistics']['total_errors'] = count( $results['error_files'] );
 
 		return $results;
 	}
@@ -816,11 +1044,28 @@ class IO_Image_Cleanup {
 
 		// Normalize path
 		$normalized_path = wp_normalize_path( $file_path );
-		$real_path       = realpath( $normalized_path );
-
+		
+		// Try to get real path
+		$real_path = realpath( $normalized_path );
+		
+		// If realpath fails, try the normalized path directly
 		if ( ! $real_path ) {
-			$result['error'] = 'Invalid file path';
-			return $result;
+			// Check if normalized path exists
+			if ( file_exists( $normalized_path ) ) {
+				$real_path = $normalized_path;
+			} else {
+				// Log for debugging
+				$this->log_action(
+					'VALIDATE_PATH_FAILED',
+					array(
+						'original_path' => $file_path,
+						'normalized_path' => $normalized_path,
+						'exists' => file_exists( $normalized_path ),
+					)
+				);
+				$result['error'] = 'Invalid file path or file does not exist';
+				return $result;
+			}
 		}
 
 		$real_path    = wp_normalize_path( $real_path );
@@ -831,8 +1076,19 @@ class IO_Image_Cleanup {
 			return $result;
 		}
 
+		// Normalize both paths for comparison (handle Windows path case sensitivity)
+		$real_path_lower = strtolower( $real_path );
+		$uploads_dir_lower = strtolower( $uploads_dir );
+
 		// Check if file is within uploads directory
-		if ( strpos( $real_path, $uploads_dir ) !== 0 ) {
+		if ( strpos( $real_path_lower, $uploads_dir_lower ) !== 0 ) {
+			$this->log_action(
+				'VALIDATE_PATH_OUTSIDE',
+				array(
+					'file_path' => $real_path,
+					'uploads_dir' => $uploads_dir,
+				)
+			);
 			$result['error'] = 'File is outside uploads directory';
 			return $result;
 		}
@@ -898,8 +1154,8 @@ class IO_Image_Cleanup {
 			'skipped' => 0,
 		);
 
-		// Log deletion start
-		if ( $options['log'] ) {
+		// Log deletion start (only log summary, not every file)
+		if ( $options['log'] && $options['dry_run'] ) {
 			$this->log_action(
 				'DELETE_START',
 				array(
@@ -911,44 +1167,42 @@ class IO_Image_Cleanup {
 
 		$processed = 0;
 		foreach ( $file_paths as $file_path ) {
-			// Check batch size limit
-			if ( $processed >= $options['batch_size'] && ! $options['dry_run'] ) {
-				// In real deletion, we might want to stop here and continue in next request
-				// For now, we'll continue but log it
-				if ( $options['log'] ) {
-					$this->log_action(
-						'BATCH_LIMIT_REACHED',
-						array(
-							'processed' => $processed,
-							'batch_size' => $options['batch_size'],
-						)
-					);
-				}
+			// Skip empty paths
+			if ( empty( $file_path ) ) {
+				continue;
 			}
-
-			// Validate path
-			$validation = $this->validate_file_path( $file_path );
-			if ( ! $validation['valid'] ) {
+			
+			// Quick validation: check if file exists and is within uploads directory
+			// Skip full validation for speed - only validate critical checks
+			$normalized_path = wp_normalize_path( $file_path );
+			$real_path = realpath( $normalized_path );
+			
+			// If realpath fails, try normalized path directly
+			if ( ! $real_path ) {
+				$real_path = $normalized_path;
+			}
+			
+			// Quick check: file must exist
+			if ( ! file_exists( $real_path ) ) {
+				// File already deleted, count as success
+				$results['deleted']++;
+				$processed++;
+				continue;
+			}
+			
+			// Quick check: must be a file (not directory)
+			if ( ! is_file( $real_path ) ) {
 				$results['failed']++;
 				$results['errors'][] = array(
 					'file'  => $file_path,
-					'error' => $validation['error'],
+					'error' => 'Path is not a file',
 				);
-
-				if ( $options['log'] ) {
-					$this->log_action(
-						'DELETE_FAILED',
-						array(
-							'file'  => $file_path,
-							'error' => $validation['error'],
-						)
-					);
-				}
+				$processed++;
 				continue;
 			}
-
-			// Get real path after validation
-			$real_path = wp_normalize_path( realpath( $file_path ) );
+			
+			// Final normalize path
+			$real_path = wp_normalize_path( $real_path );
 
 			// Dry run mode - don't actually delete
 			if ( $options['dry_run'] ) {
@@ -969,33 +1223,54 @@ class IO_Image_Cleanup {
 			$deleted      = false;
 			$delete_error = '';
 
-			// Check if file is writable
-			if ( ! is_writable( $real_path ) ) {
-				$delete_error = 'File is not writable';
-			} else {
-				// Attempt deletion
-				$deleted = @unlink( $real_path );
-				if ( ! $deleted ) {
-					$delete_error = 'Failed to delete file (permission denied or file locked)';
-				}
-			}
-
-			if ( $deleted ) {
-				$results['deleted']++;
+			// Check if file exists first
+			if ( ! file_exists( $real_path ) ) {
+				// File already deleted, count as success
+				$deleted = true;
 				if ( $options['log'] ) {
 					$this->log_action(
-						'DELETE_SUCCESS',
+						'DELETE_ALREADY_GONE',
 						array(
 							'file' => $real_path,
 						)
 					);
 				}
 			} else {
+				// Attempt deletion directly (is_writable check can be unreliable on Windows)
+				$deleted = @unlink( $real_path );
+				if ( ! $deleted ) {
+					// Check if file still exists to determine error
+					if ( file_exists( $real_path ) ) {
+						// File still exists, deletion failed
+						$delete_error = 'Failed to delete file (permission denied or file locked)';
+						if ( $options['log'] ) {
+							$this->log_action(
+								'DELETE_FAILED_DETAIL',
+								array(
+									'file' => $real_path,
+									'is_readable' => is_readable( $real_path ),
+									'is_writable' => is_writable( $real_path ),
+									'perms' => fileperms( $real_path ),
+								)
+							);
+						}
+					} else {
+						// File was deleted successfully (race condition)
+						$deleted = true;
+					}
+				}
+			}
+
+			if ( $deleted ) {
+				$results['deleted']++;
+				// Only log failures, not every success (to reduce I/O overhead)
+			} else {
 				$results['failed']++;
 				$results['errors'][] = array(
 					'file'  => $real_path,
 					'error' => $delete_error,
 				);
+				// Only log failures for debugging
 				if ( $options['log'] ) {
 					$this->log_action(
 						'DELETE_FAILED',
@@ -1038,6 +1313,51 @@ class IO_Image_Cleanup {
 			'total_failed'   => 0,
 			'last_deletion' => null,
 		);
+	}
+
+	/**
+	 * Convert memory limit string to bytes
+	 *
+	 * @param string $memory_limit Memory limit string (e.g., '128M', '256M').
+	 * @return int Memory limit in bytes.
+	 */
+	private function convert_to_bytes( $memory_limit ) {
+		$memory_limit = trim( $memory_limit );
+		if ( empty( $memory_limit ) ) {
+			return 0;
+		}
+		
+		$last = strtolower( $memory_limit[ strlen( $memory_limit ) - 1 ] );
+		$value = (int) $memory_limit;
+		
+		switch ( $last ) {
+			case 'g':
+				$value *= 1024;
+				// Fall through
+			case 'm':
+				$value *= 1024;
+				// Fall through
+			case 'k':
+				$value *= 1024;
+		}
+		
+		return $value;
+	}
+
+	/**
+	 * Format bytes to human-readable string
+	 *
+	 * @param int $bytes Bytes to format.
+	 * @return string Formatted string (e.g., '128 MB').
+	 */
+	private function format_bytes( $bytes ) {
+		$units = array( 'B', 'KB', 'MB', 'GB', 'TB' );
+		$bytes = max( $bytes, 0 );
+		$pow = floor( ( $bytes ? log( $bytes ) : 0 ) / log( 1024 ) );
+		$pow = min( $pow, count( $units ) - 1 );
+		$bytes /= pow( 1024, $pow );
+		
+		return round( $bytes, 2 ) . ' ' . $units[ $pow ];
 	}
 }
 

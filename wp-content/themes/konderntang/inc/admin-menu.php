@@ -69,6 +69,12 @@ function konderntang_admin_page() {
     $post_count = wp_count_posts();
     $page_count = wp_count_posts( 'page' );
     
+    // Custom Post Types
+    $travel_guide_count = wp_count_posts( 'travel_guide' );
+    $hotel_count = wp_count_posts( 'hotel' );
+    $promotion_count = wp_count_posts( 'promotion' );
+    
+    // Taxonomies
     $category_count = wp_count_terms(
         array(
             'taxonomy'   => 'category',
@@ -87,6 +93,26 @@ function konderntang_admin_page() {
     );
     if ( is_wp_error( $tag_count ) ) {
         $tag_count = 0;
+    }
+    
+    $destination_count = wp_count_terms(
+        array(
+            'taxonomy'   => 'destination',
+            'hide_empty' => false,
+        )
+    );
+    if ( is_wp_error( $destination_count ) ) {
+        $destination_count = 0;
+    }
+    
+    $travel_type_count = wp_count_terms(
+        array(
+            'taxonomy'   => 'travel_type',
+            'hide_empty' => false,
+        )
+    );
+    if ( is_wp_error( $travel_type_count ) ) {
+        $travel_type_count = 0;
     }
     // Get recent posts
     $recent_posts = get_posts( array(
@@ -131,7 +157,8 @@ function konderntang_admin_page() {
                 </div>
                 <div class="konderntang-widget-content">
                     <div class="konderntang-stats-grid">
-                        <div class="konderntang-stat-item">
+                        <!-- Standard Content -->
+                        <a href="<?php echo esc_url( admin_url( 'edit.php' ) ); ?>" class="konderntang-stat-item">
                             <div class="stat-icon" style="background: #0ea5e9;">
                                 <span class="dashicons dashicons-admin-post"></span>
                             </div>
@@ -139,8 +166,8 @@ function konderntang_admin_page() {
                                 <div class="stat-number"><?php echo number_format_i18n( $post_count->publish ); ?></div>
                                 <div class="stat-label"><?php esc_html_e( 'บทความ', 'konderntang' ); ?></div>
                             </div>
-                        </div>
-                        <div class="konderntang-stat-item">
+                        </a>
+                        <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=page' ) ); ?>" class="konderntang-stat-item">
                             <div class="stat-icon" style="background: #f97316;">
                                 <span class="dashicons dashicons-admin-page"></span>
                             </div>
@@ -148,8 +175,39 @@ function konderntang_admin_page() {
                                 <div class="stat-number"><?php echo number_format_i18n( $page_count->publish ); ?></div>
                                 <div class="stat-label"><?php esc_html_e( 'หน้า', 'konderntang' ); ?></div>
                             </div>
-                        </div>
-                        <div class="konderntang-stat-item">
+                        </a>
+                        
+                        <!-- Custom Post Types -->
+                        <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=travel_guide' ) ); ?>" class="konderntang-stat-item">
+                            <div class="stat-icon" style="background: #14b8a6;">
+                                <span class="dashicons dashicons-location-alt"></span>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number"><?php echo number_format_i18n( $travel_guide_count->publish ); ?></div>
+                                <div class="stat-label"><?php esc_html_e( 'Travel Guides', 'konderntang' ); ?></div>
+                            </div>
+                        </a>
+                        <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=hotel' ) ); ?>" class="konderntang-stat-item">
+                            <div class="stat-icon" style="background: #ec4899;">
+                                <span class="dashicons dashicons-building"></span>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number"><?php echo number_format_i18n( $hotel_count->publish ); ?></div>
+                                <div class="stat-label"><?php esc_html_e( 'Hotels', 'konderntang' ); ?></div>
+                            </div>
+                        </a>
+                        <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=promotion' ) ); ?>" class="konderntang-stat-item">
+                            <div class="stat-icon" style="background: #f59e0b;">
+                                <span class="dashicons dashicons-tag"></span>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number"><?php echo number_format_i18n( $promotion_count->publish ); ?></div>
+                                <div class="stat-label"><?php esc_html_e( 'Promotions', 'konderntang' ); ?></div>
+                            </div>
+                        </a>
+                        
+                        <!-- Taxonomies -->
+                        <a href="<?php echo esc_url( admin_url( 'edit-tags.php?taxonomy=category' ) ); ?>" class="konderntang-stat-item">
                             <div class="stat-icon" style="background: #10b981;">
                                 <span class="dashicons dashicons-category"></span>
                             </div>
@@ -157,8 +215,8 @@ function konderntang_admin_page() {
                                 <div class="stat-number"><?php echo number_format_i18n( $category_count ); ?></div>
                                 <div class="stat-label"><?php esc_html_e( 'หมวดหมู่', 'konderntang' ); ?></div>
                             </div>
-                        </div>
-                        <div class="konderntang-stat-item">
+                        </a>
+                        <a href="<?php echo esc_url( admin_url( 'edit-tags.php?taxonomy=post_tag' ) ); ?>" class="konderntang-stat-item">
                             <div class="stat-icon" style="background: #8b5cf6;">
                                 <span class="dashicons dashicons-tag"></span>
                             </div>
@@ -166,7 +224,25 @@ function konderntang_admin_page() {
                                 <div class="stat-number"><?php echo number_format_i18n( $tag_count ); ?></div>
                                 <div class="stat-label"><?php esc_html_e( 'แท็ก', 'konderntang' ); ?></div>
                             </div>
-                        </div>
+                        </a>
+                        <a href="<?php echo esc_url( admin_url( 'edit-tags.php?taxonomy=destination&post_type=post' ) ); ?>" class="konderntang-stat-item">
+                            <div class="stat-icon" style="background: #06b6d4;">
+                                <span class="dashicons dashicons-location"></span>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number"><?php echo number_format_i18n( $destination_count ); ?></div>
+                                <div class="stat-label"><?php esc_html_e( 'Destinations', 'konderntang' ); ?></div>
+                            </div>
+                        </a>
+                        <a href="<?php echo esc_url( admin_url( 'edit-tags.php?taxonomy=travel_type&post_type=post' ) ); ?>" class="konderntang-stat-item">
+                            <div class="stat-icon" style="background: #a855f7;">
+                                <span class="dashicons dashicons-airplane"></span>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number"><?php echo number_format_i18n( $travel_type_count ); ?></div>
+                                <div class="stat-label"><?php esc_html_e( 'Travel Types', 'konderntang' ); ?></div>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>

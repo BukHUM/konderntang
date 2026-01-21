@@ -204,24 +204,57 @@ class IO_Image_Optimizer {
 	 * @param int $attachment_id Attachment ID.
 	 * @return bool|WP_Error True on success, WP_Error on failure.
 	 */
-	public function regenerate_image( $attachment_id ) {
+	public function regenerate_image( $attachment_id, $options = array() ) {
+		$defaults = array(
+			'regenerate_type' => 'all', // 'all', 'resize', 'webp'
+			'regenerate_thumbnails' => false,
+		);
+		$options = wp_parse_args( $options, $defaults );
+		
 		$file = get_attached_file( $attachment_id );
 		if ( ! $file || ! file_exists( $file ) ) {
 			return new WP_Error( 'no_file', __( 'File not found.', 'image-optimization' ) );
 		}
 
-		// Regenerate metadata and sizes
-		$metadata = wp_generate_attachment_metadata( $attachment_id, $file );
-		if ( is_wp_error( $metadata ) ) {
-			return $metadata;
+		$regenerate_type = $options['regenerate_type'];
+		$regenerate_thumbnails = $options['regenerate_thumbnails'];
+		
+		// Handle resize
+		if ( $regenerate_type === 'all' || $regenerate_type === 'resize' ) {
+			// Resize main image if auto resize is enabled
+			$auto_resize = get_option( 'io_image_auto_resize', '1' );
+			if ( $auto_resize === '1' ) {
+				$max_width = absint( get_option( 'io_image_max_width', 1920 ) );
+				$max_height = absint( get_option( 'io_image_max_height', 1080 ) );
+				$maintain_aspect = get_option( 'io_image_maintain_aspect', '1' ) === '1';
+				$jpeg_quality = absint( get_option( 'io_image_jpeg_quality', 85 ) );
+				
+				$image = wp_get_image_editor( $file );
+				if ( ! is_wp_error( $image ) ) {
+					$image->set_quality( $jpeg_quality );
+					$image->resize( $max_width, $max_height, $maintain_aspect );
+					$image->save( $file );
+				}
+			}
+		}
+		
+		// Regenerate metadata and thumbnails
+		if ( $regenerate_thumbnails || $regenerate_type === 'all' || $regenerate_type === 'resize' ) {
+			$metadata = wp_generate_attachment_metadata( $attachment_id, $file );
+			if ( ! is_wp_error( $metadata ) ) {
+				wp_update_attachment_metadata( $attachment_id, $metadata );
+			}
+		} else {
+			// Just get existing metadata for WebP conversion
+			$metadata = wp_get_attachment_metadata( $attachment_id );
 		}
 
-		wp_update_attachment_metadata( $attachment_id, $metadata );
-
 		// Convert to WebP if enabled
-		if ( get_option( 'io_image_webp_enabled', '1' ) === '1' ) {
-			$webp_converter = IO_WebP_Converter::get_instance();
-			$webp_converter->convert_to_webp( $metadata, $attachment_id );
+		if ( ( $regenerate_type === 'all' || $regenerate_type === 'webp' ) && get_option( 'io_image_webp_enabled', '1' ) === '1' ) {
+			if ( ! empty( $metadata ) ) {
+				$webp_converter = IO_WebP_Converter::get_instance();
+				$webp_converter->convert_to_webp( $metadata, $attachment_id );
+			}
 		}
 
 		return true;

@@ -200,22 +200,134 @@
                     }
                     
                     if (response.success) {
+                        console.log('Scan completed successfully', response);
+                        console.log('Response data:', response.data);
+                        console.log('Response data type:', typeof response.data);
+                        console.log('Response data keys:', response.data ? Object.keys(response.data) : 'null');
+                        
+                        // Validate response data structure
+                        if (!response.data) {
+                            console.error('Response data is null or undefined!');
+                            alert('เกิดข้อผิดพลาด: ไม่ได้รับข้อมูลผลลัพธ์ กรุณาลองใหม่อีกครั้ง');
+                            $btn.prop('disabled', false);
+                            resetScanState();
+                            return;
+                        }
+                        
+                        // Ensure data has required structure
+                        if (!response.data.hasOwnProperty('thumbnails')) {
+                            response.data.thumbnails = [];
+                        }
+                        if (!response.data.hasOwnProperty('webp')) {
+                            response.data.webp = [];
+                        }
+                        if (!response.data.hasOwnProperty('orphaned')) {
+                            response.data.orphaned = [];
+                        }
+                        if (!response.data.hasOwnProperty('statistics')) {
+                            response.data.statistics = {};
+                        }
+                        if (!response.data.hasOwnProperty('error_files')) {
+                            response.data.error_files = [];
+                        }
+                        
                         $progressBar.css('width', '100%');
                         var scanTime = response.data.statistics && response.data.statistics.scan_time ? 
                             ' (' + response.data.statistics.scan_time + 's)' : '';
-                        $status.html('<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span> ' + 
-                            (ioAdmin.i18n.scanComplete || 'แสกนเสร็จสิ้น') + scanTime);
                         
-                        // Display results
-                        displayScanResults(response.data);
-                        $results.show();
+                        // Check if there are errors
+                        var hasErrors = response.data.error_files && response.data.error_files.length > 0;
+                        var errorCount = hasErrors ? response.data.error_files.length : 0;
+                        var totalScanned = response.data.statistics && response.data.statistics.total_scanned ? 
+                            response.data.statistics.total_scanned : 0;
+                        
+                        if (hasErrors) {
+                            $status.html(
+                                '<span class="dashicons dashicons-warning" style="color: #dba617;"></span> ' + 
+                                '<span style="color: #dba617; font-weight: 500;">แสกนเสร็จสิ้น</span>' + scanTime + 
+                                ' <span style="color: #d63638;">(พบข้อผิดพลาด ' + errorCount + ' ไฟล์)</span>'
+                            );
+                        } else {
+                            $status.html('<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span> ' + 
+                                '<span style="color: #00a32a; font-weight: 500;">แสกนเสร็จสิ้น</span>' + scanTime);
+                        }
+                        
+                        // Check if results element exists
+                        if ($results.length === 0) {
+                            console.error('Results element #io-scan-results not found!');
+                            alert('เกิดข้อผิดพลาด: ไม่พบ element สำหรับแสดงผลลัพธ์ กรุณา refresh หน้าเว็บ');
+                            $btn.prop('disabled', false);
+                            return;
+                        }
+                        
+                        // Display results (including error files)
+                        console.log('Displaying scan results...', {
+                            thumbnails: (response.data.thumbnails || []).length,
+                            webp: (response.data.webp || []).length,
+                            orphaned: (response.data.orphaned || []).length,
+                            statistics: response.data.statistics,
+                            hasResults: $results.length > 0
+                        });
+                        
+                        // Always show results section, even if empty
+                        try {
+                            displayScanResults(response.data);
+                        } catch (e) {
+                            console.error('Error in displayScanResults:', e);
+                            alert('เกิดข้อผิดพลาดในการแสดงผลลัพธ์: ' + e.message);
+                        }
+                        
+                        // Force show results with animation and ensure visibility
+                        $results.css({
+                            'display': 'block',
+                            'visibility': 'visible',
+                            'opacity': '1'
+                        }).slideDown(300);
+                        console.log('Results element shown:', $results.is(':visible'), 'Display:', $results.css('display'), 'Height:', $results.height());
+                        
+                        // Double check - if still not visible, force it
+                        setTimeout(function() {
+                            if (!$results.is(':visible') || $results.height() === 0) {
+                                console.warn('Results still not visible, forcing display');
+                                $results.css({
+                                    'display': 'block !important',
+                                    'visibility': 'visible !important',
+                                    'opacity': '1 !important',
+                                    'height': 'auto !important'
+                                }).show();
+                                
+                                // Try to scroll to it
+                                $('html, body').animate({
+                                    scrollTop: $results.offset().top - 100
+                                }, 500);
+                            }
+                        }, 500);
+                        
+                        // Display error summary if there are errors
+                        if (response.data.error_files && response.data.error_files.length > 0) {
+                            displayErrorSummary(response.data.error_files);
+                        } else {
+                            $('#io-error-summary').hide();
+                        }
+                        
+                        // Enable button and reset state
+                        $btn.prop('disabled', false);
+                        
+                        // Scroll to results section smoothly
+                        setTimeout(function() {
+                            if ($results.length && $results.is(':visible')) {
+                                $('html, body').animate({
+                                    scrollTop: $results.offset().top - 100
+                                }, 500);
+                            }
+                        }, 500);
                         
                         // Hide progress after a short delay
                         setTimeout(function() {
                             $progress.fadeOut(500);
                         }, 2000);
                     } else {
-                        // Reset state on error
+                        // Reset state on fatal error
                         resetScanState();
                         
                         // Show error message briefly
@@ -282,23 +394,60 @@
                     );
                     $btn.prop('disabled', false);
                     
-                    // Auto-hide error after 5 seconds
-                    setTimeout(function() {
-                        resetScanState();
-                    }, 5000);
-                    
+                    // Don't auto-hide error - keep it visible so user can see the summary
                     // Show alert with helpful message (only once)
                     if (!window.ioScanErrorShown) {
                         window.ioScanErrorShown = true;
-                        alert('เกิดข้อผิดพลาดในการแสกน\n\n' + errorMsg + '\n\nหากปัญหายังคงอยู่ กรุณาตรวจสอบ:\n' +
-                              '1. สิทธิ์การเข้าถึงโฟลเดอร์ uploads\n' +
-                              '2. การตั้งค่า memory_limit ใน php.ini\n' +
-                              '3. Log ไฟล์สำหรับรายละเอียดเพิ่มเติม');
+                        alert('เกิดข้อผิดพลาดในการแสกน\n\n' + errorMsg + '\n\nกรุณาตรวจสอบสรุปปัญหาด้านล่าง');
                         // Reset flag after 2 seconds
                         setTimeout(function() {
                             window.ioScanErrorShown = false;
                         }, 2000);
                     }
+                    
+                    // Try to show error summary if we have error data from previous scan
+                    // This won't work for fatal errors, but we'll show what we can
+                    $('#io-error-summary').show();
+                    var summaryHtml = '<div style="background: #fcf0f1; padding: 15px; margin-bottom: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' +
+                        '<p style="margin: 0;"><strong>เกิดข้อผิดพลาดร้ายแรง:</strong></p>' +
+                        '<p style="margin: 10px 0 0 0;">' + escapeHtml(errorMsg) + '</p>' +
+                        '</div>';
+                    
+                    // Add memory limit info
+                    summaryHtml += '<div style="background: #f0f6fc; padding: 15px; margin-bottom: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' +
+                        '<p style="margin: 0 0 10px 0;"><strong>การตั้งค่า Memory Limit:</strong></p>' +
+                        '<p style="margin: 0; font-size: 12px; color: #646970; white-space: pre-line;">' +
+                        'แนะนำ: memory_limit = 256M (หรือ 512M สำหรับเว็บไซต์ที่มีภาพจำนวนมาก)\n\n' +
+                        'วิธีแก้ไข:\n' +
+                        '1. เปิดไฟล์ php.ini (สำหรับ XAMPP: C:\\xampp\\php\\php.ini)\n' +
+                        '2. หา memory_limit และเปลี่ยนเป็น: memory_limit = 256M\n' +
+                        '3. บันทึกไฟล์และรีสตาร์ท Apache\n' +
+                        '4. หรือเพิ่มใน wp-config.php: ini_set("memory_limit", "256M");' +
+                        '</p>' +
+                        '</div>';
+                    
+                    // Add log file locations
+                    summaryHtml += '<div style="background: #f0f6fc; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' +
+                        '<p style="margin: 0 0 10px 0;"><strong>ตำแหน่ง Log ไฟล์ที่ควรตรวจสอบ:</strong></p>' +
+                        '<ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #646970;">' +
+                        '<li style="margin-bottom: 8px;"><strong>WordPress Debug Log:</strong><br>' +
+                        '<code style="background: #fff; padding: 2px 6px; border-radius: 3px; font-size: 11px; display: inline-block; margin-top: 4px;">wp-content/debug.log</code><br>' +
+                        '<span style="font-size: 11px;">(ถ้าเปิด WP_DEBUG_LOG ใน wp-config.php)</span></li>' +
+                        '<li style="margin-bottom: 8px;"><strong>XAMPP PHP Error Log:</strong><br>' +
+                        '<code style="background: #fff; padding: 2px 6px; border-radius: 3px; font-size: 11px; display: inline-block; margin-top: 4px;">C:\\xampp\\php\\logs\\php_error_log</code></li>' +
+                        '<li style="margin-bottom: 8px;"><strong>XAMPP Apache Error Log:</strong><br>' +
+                        '<code style="background: #fff; padding: 2px 6px; border-radius: 3px; font-size: 11px; display: inline-block; margin-top: 4px;">C:\\xampp\\apache\\logs\\error.log</code></li>' +
+                        '<li><strong>ตรวจสอบ PHP Error Log:</strong><br>' +
+                        '<span style="font-size: 11px;">สร้างไฟล์ phpinfo.php ใน root และเปิดดูค่า error_log</span></li>' +
+                        '</ul>' +
+                        '</div>';
+                    
+                    $('#io-error-summary-content').html(summaryHtml);
+                    $('#io-error-actions').html(
+                        '<button type="button" id="io-retry-scan" class="button button-primary">' +
+                        '<span class="dashicons dashicons-update"></span> ลองแสกนอีกครั้ง' +
+                        '</button>'
+                    );
                 }
             });
             
@@ -308,7 +457,10 @@
         
         // Display scan results
         function displayScanResults(data) {
+            console.log('displayScanResults called with data:', data);
+            
             var stats = data.statistics || {};
+            var $status = $('#io-scan-status');
             
             // Update statistics
             $('#stat-thumbnails-count').text(stats.total_thumbnails || 0);
@@ -318,6 +470,26 @@
             $('#stat-orphaned-count').text(stats.total_orphaned || 0);
             $('#stat-orphaned-size').text((stats.orphaned_size_mb || 0).toFixed(2) + ' MB');
             $('#stat-total-size').text((stats.total_size_mb || 0).toFixed(2) + ' MB');
+            
+            console.log('Statistics updated:', {
+                thumbnails: stats.total_thumbnails || 0,
+                webp: stats.total_webp || 0,
+                orphaned: stats.total_orphaned || 0,
+                total_size: stats.total_size_mb || 0
+            });
+            
+            // Show scan statistics if available
+            if (stats.total_scanned) {
+                var scanInfo = 'แสกนทั้งหมด: ' + stats.total_scanned + ' ไฟล์';
+                if (stats.total_errors > 0) {
+                    scanInfo += ' (พบข้อผิดพลาด: ' + stats.total_errors + ' ไฟล์)';
+                }
+                if (!$('#io-scan-info').length) {
+                    $status.after('<p id="io-scan-info" style="color: #646970; font-size: 12px; margin-top: 5px;">' + scanInfo + '</p>');
+                } else {
+                    $('#io-scan-info').text(scanInfo);
+                }
+            }
             
             // Update tab counts
             $('#tab-thumbnails-count').text(stats.total_thumbnails || 0);
@@ -329,7 +501,14 @@
             displayFileList('webp', data.webp || []);
             displayFileList('orphaned', data.orphaned || []);
             
-            // Display failed files if any
+            // Display error files from scan (different from failed delete files)
+            if (data.error_files && data.error_files.length > 0) {
+                displayErrorFiles(data.error_files);
+            } else {
+                $('#error-files-tab-li').hide();
+            }
+            
+            // Display failed delete files if any
             if (data.failed_files && data.failed_files.length > 0) {
                 displayFailedFiles(data.failed_files);
             } else {
@@ -342,6 +521,388 @@
             var totalFiles = (stats.total_thumbnails || 0) + (stats.total_webp || 0) + (stats.total_orphaned || 0);
             $('#io-delete-selected').prop('disabled', totalFiles === 0);
             $('#io-delete-all').prop('disabled', totalFiles === 0);
+            
+            // Update delete by type button counts and states
+            var thumbnailsCount = stats.total_thumbnails || 0;
+            var webpCount = stats.total_webp || 0;
+            var orphanedCount = stats.total_orphaned || 0;
+            
+            $('#io-delete-thumbnails-count').text(thumbnailsCount);
+            $('#io-delete-webp-count').text(webpCount);
+            $('#io-delete-orphaned-count').text(orphanedCount);
+            
+            $('#io-delete-thumbnails').prop('disabled', thumbnailsCount === 0);
+            $('#io-delete-webp').prop('disabled', webpCount === 0);
+            $('#io-delete-orphaned').prop('disabled', orphanedCount === 0);
+            
+            // Show message if no files found
+            if (totalFiles === 0 && (!data.error_files || data.error_files.length === 0)) {
+                var $noResults = $('#io-no-results-message');
+                if ($noResults.length === 0) {
+                    $('#io-scan-results').prepend(
+                        '<div id="io-no-results-message" style="background: #f0f6fc; padding: 15px; margin-bottom: 20px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' +
+                        '<p style="margin: 0; color: #2271b1; font-weight: 500;">' +
+                        '<span class="dashicons dashicons-info" style="vertical-align: middle;"></span> ' +
+                        'ไม่พบไฟล์ที่ไม่ได้ใช้งาน</p>' +
+                        '<p style="margin: 10px 0 0 0; color: #646970; font-size: 13px;">' +
+                        'ระบบไม่พบไฟล์ภาพที่ไม่ได้ใช้งานในระบบของคุณ</p>' +
+                        '</div>'
+                    );
+                }
+            } else {
+                $('#io-no-results-message').remove();
+            }
+        }
+        
+        // Display error summary with fix options
+        function displayErrorSummary(errorFiles) {
+            if (!errorFiles || errorFiles.length === 0) {
+                $('#io-error-summary').hide();
+                currentErrorFiles = [];
+                return;
+            }
+            
+            // Store error files globally
+            currentErrorFiles = errorFiles;
+            
+            var $summary = $('#io-error-summary');
+            var $content = $('#io-error-summary-content');
+            var $actions = $('#io-error-actions');
+            
+            // Group errors by type
+            var errorsByType = {};
+            var fixableErrors = [];
+            var nonFixableErrors = [];
+            
+            errorFiles.forEach(function(error) {
+                var errorType = detectErrorType(error.error);
+                if (!errorsByType[errorType]) {
+                    errorsByType[errorType] = [];
+                }
+                errorsByType[errorType].push(error);
+                
+                // Check if error is fixable
+                if (isErrorFixable(errorType)) {
+                    fixableErrors.push({
+                        type: errorType,
+                        file: error.file || error.filename || '',
+                        error: error
+                    });
+                } else {
+                    nonFixableErrors.push({
+                        type: errorType,
+                        file: error.file || error.filename || '',
+                        error: error
+                    });
+                }
+            });
+            
+            // Build summary HTML
+            var html = '<div style="background: #fff5f5; padding: 15px; margin-bottom: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+            html += '<p style="margin: 0 0 10px 0;"><strong>พบปัญหา ' + errorFiles.length + ' รายการ:</strong></p>';
+            
+            // Show error types summary
+            var errorTypes = Object.keys(errorsByType);
+            html += '<ul style="margin: 0; padding-left: 20px;">';
+            errorTypes.forEach(function(type) {
+                var typeLabel = getErrorTypeLabel(type);
+                html += '<li>' + typeLabel + ': ' + errorsByType[type].length + ' รายการ</li>';
+            });
+            html += '</ul>';
+            html += '</div>';
+            
+            // Show fixable errors
+            if (fixableErrors.length > 0) {
+                html += '<div style="background: #f0f6fc; padding: 15px; margin-bottom: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+                html += '<p style="margin: 0 0 10px 0;"><strong>ปัญหาที่แก้ไขได้อัตโนมัติ:</strong></p>';
+                html += '<ul style="margin: 0; padding-left: 20px;">';
+                fixableErrors.forEach(function(item) {
+                    var fileName = item.file ? item.file.split(/[\\/]/).pop() : 'N/A';
+                    html += '<li>' + escapeHtml(fileName) + ' - ' + getErrorTypeLabel(item.type) + '</li>';
+                });
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            // Show non-fixable errors with hints
+            if (nonFixableErrors.length > 0) {
+                html += '<div style="background: #fcf0f1; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+                html += '<p style="margin: 0 0 10px 0;"><strong>ปัญหาที่ต้องแก้ไขด้วยตนเอง:</strong></p>';
+                html += '<ul style="margin: 0; padding-left: 20px;">';
+                nonFixableErrors.forEach(function(item) {
+                    var fileName = item.file ? item.file.split(/[\\/]/).pop() : 'N/A';
+                    var hint = getErrorHint(item.type);
+                    html += '<li style="margin-bottom: 12px;">';
+                    html += '<strong>' + escapeHtml(fileName) + '</strong><br>';
+                    html += '<div style="font-size: 12px; color: #646970; margin-top: 5px; white-space: pre-line; background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #e0e0e0;">' + escapeHtml(hint) + '</div>';
+                    html += '</li>';
+                });
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            // Add log file locations info
+            html += '<div style="background: #f0f6fc; padding: 15px; margin-top: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+            html += '<p style="margin: 0 0 10px 0;"><strong>ตำแหน่ง Log ไฟล์ที่ควรตรวจสอบ:</strong></p>';
+            html += '<ul style="margin: 0; padding-left: 20px; font-size: 12px;">';
+            html += '<li><strong>WordPress Debug Log:</strong><br>';
+            html += '<code style="background: #fff; padding: 2px 6px; border-radius: 3px; font-size: 11px;">wp-content/debug.log</code><br>';
+            html += '<span style="color: #646970;">(ถ้าเปิด WP_DEBUG_LOG ใน wp-config.php)</span></li>';
+            html += '<li style="margin-top: 8px;"><strong>XAMPP PHP Error Log:</strong><br>';
+            html += '<code style="background: #fff; padding: 2px 6px; border-radius: 3px; font-size: 11px;">C:\\xampp\\php\\logs\\php_error_log</code></li>';
+            html += '<li style="margin-top: 8px;"><strong>XAMPP Apache Error Log:</strong><br>';
+            html += '<code style="background: #fff; padding: 2px 6px; border-radius: 3px; font-size: 11px;">C:\\xampp\\apache\\logs\\error.log</code></li>';
+            html += '<li style="margin-top: 8px;"><strong>ตรวจสอบ PHP Error Log:</strong><br>';
+            html += '<span style="color: #646970;">สร้างไฟล์ phpinfo.php ใน root และเปิดดูค่า error_log</span></li>';
+            html += '</ul>';
+            html += '</div>';
+            
+            $content.html(html);
+            
+            // Build action buttons
+            var actionsHtml = '';
+            if (fixableErrors.length > 0) {
+                actionsHtml += '<button type="button" id="io-fix-all-errors" class="button button-primary">';
+                actionsHtml += '<span class="dashicons dashicons-admin-tools"></span> ';
+                actionsHtml += 'แก้ไขปัญหาทั้งหมด (' + fixableErrors.length + ')';
+                actionsHtml += '</button> ';
+            }
+            
+            actionsHtml += '<button type="button" id="io-view-error-details" class="button button-secondary">';
+            actionsHtml += '<span class="dashicons dashicons-visibility"></span> ';
+            actionsHtml += 'ดูรายละเอียดทั้งหมด';
+            actionsHtml += '</button>';
+            
+            $actions.html(actionsHtml);
+            $summary.show();
+        }
+        
+        // Detect error type from error message
+        function detectErrorType(errorMessage) {
+            if (!errorMessage) return 'unknown';
+            
+            var msg = errorMessage.toLowerCase();
+            
+            if (msg.indexOf('ไม่สามารถอ่าน') !== -1 || msg.indexOf('not readable') !== -1 || 
+                msg.indexOf('permission') !== -1 || msg.indexOf('สิทธิ์') !== -1) {
+                return 'permission';
+            }
+            if (msg.indexOf('ไม่พบ') !== -1 || msg.indexOf('not found') !== -1 || 
+                msg.indexOf('no such file') !== -1) {
+                return 'not_found';
+            }
+            if (msg.indexOf('database') !== -1 || msg.indexOf('ฐานข้อมูล') !== -1 || 
+                msg.indexOf('mysql') !== -1 || msg.indexOf('query') !== -1) {
+                return 'database';
+            }
+            if (msg.indexOf('memory') !== -1 || msg.indexOf('หน่วยความจำ') !== -1) {
+                return 'memory';
+            }
+            if (msg.indexOf('timeout') !== -1 || msg.indexOf('ใช้เวลานาน') !== -1) {
+                return 'timeout';
+            }
+            
+            return 'unknown';
+        }
+        
+        // Check if error is fixable
+        function isErrorFixable(errorType) {
+            var fixableTypes = ['permission', 'not_readable'];
+            return fixableTypes.indexOf(errorType) !== -1;
+        }
+        
+        // Get error type label
+        function getErrorTypeLabel(errorType) {
+            var labels = {
+                'permission': 'ปัญหาสิทธิ์การเข้าถึง',
+                'not_readable': 'ไม่สามารถอ่านไฟล์',
+                'not_found': 'ไม่พบไฟล์/โฟลเดอร์',
+                'database': 'ปัญหาฐานข้อมูล',
+                'memory': 'หน่วยความจำไม่เพียงพอ',
+                'timeout': 'ใช้เวลานานเกินไป',
+                'unknown': 'ไม่ทราบสาเหตุ'
+            };
+            return labels[errorType] || labels['unknown'];
+        }
+        
+        // Get error hint/instructions
+        function getErrorHint(errorType) {
+            var hints = {
+                'permission': 'วิธีแก้ไข: ใช้ FTP/SSH เพื่อเปลี่ยนสิทธิ์โฟลเดอร์ uploads เป็น 755 หรือ 775',
+                'not_readable': 'วิธีแก้ไข: ตรวจสอบสิทธิ์การเข้าถึงโฟลเดอร์ uploads และไฟล์ภายใน',
+                'not_found': 'วิธีแก้ไข: ตรวจสอบว่าโฟลเดอร์ uploads มีอยู่จริง และ path ถูกต้อง',
+                'database': 'วิธีแก้ไข: ตรวจสอบการเชื่อมต่อฐานข้อมูล และ wp-config.php',
+                'memory': 'หน่วยความจำไม่เพียงพอ\n' +
+                         'วิธีแก้ไข:\n' +
+                         '1. เปิดไฟล์ php.ini (สำหรับ XAMPP: C:\\xampp\\php\\php.ini)\n' +
+                         '2. หา memory_limit และเปลี่ยนเป็น: memory_limit = 256M (หรือ 512M สำหรับเว็บไซต์ที่มีภาพจำนวนมาก)\n' +
+                         '3. บันทึกไฟล์และรีสตาร์ท Apache\n' +
+                         '4. หรือเพิ่มใน wp-config.php: ini_set("memory_limit", "256M");',
+                'timeout': 'การแสกนใช้เวลานานเกินไป\n' +
+                          'วิธีแก้ไข:\n' +
+                          '1. เปิดไฟล์ php.ini (สำหรับ XAMPP: C:\\xampp\\php\\php.ini)\n' +
+                          '2. หา max_execution_time และเปลี่ยนเป็น: max_execution_time = 300 (5 นาที)\n' +
+                          '3. บันทึกไฟล์และรีสตาร์ท Apache\n' +
+                          '4. หรือเพิ่มใน wp-config.php: set_time_limit(300);',
+                'unknown': 'วิธีแก้ไข: ตรวจสอบ log ไฟล์สำหรับรายละเอียดเพิ่มเติม'
+            };
+            return hints[errorType] || hints['unknown'];
+        }
+        
+        // Store error files globally for fix function
+        var currentErrorFiles = [];
+        
+        // Fix all fixable errors
+        $(document).on('click', '#io-fix-all-errors', function() {
+            var $btn = $(this);
+            var originalText = $btn.html();
+            
+            if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการแก้ไขปัญหาทั้งหมด?')) {
+                return;
+            }
+            
+            $btn.prop('disabled', true);
+            $btn.html('<span class="dashicons dashicons-update" style="animation: spin 1s linear infinite;"></span> กำลังแก้ไข...');
+            
+            // Filter fixable errors
+            var fixableErrors = currentErrorFiles.filter(function(error) {
+                var errorType = detectErrorType(error.error);
+                return isErrorFixable(errorType);
+            });
+            
+            if (fixableErrors.length === 0) {
+                alert('ไม่มีปัญหาที่แก้ไขได้อัตโนมัติ');
+                $btn.prop('disabled', false);
+                $btn.html(originalText);
+                return;
+            }
+            
+            // Fix errors one by one
+            var fixedCount = 0;
+            var failedCount = 0;
+            var total = fixableErrors.length;
+            var index = 0;
+            
+            function fixNextError() {
+                if (index >= total) {
+                    // All done
+                    var message = 'แก้ไขเสร็จสิ้น: ' + fixedCount + ' รายการ';
+                    if (failedCount > 0) {
+                        message += ', ล้มเหลว: ' + failedCount + ' รายการ';
+                    }
+                    alert(message);
+                    
+                    // Re-scan to verify fixes
+                    if (fixedCount > 0) {
+                        if (confirm('ต้องการแสกนอีกครั้งเพื่อตรวจสอบผลการแก้ไขหรือไม่?')) {
+                            $('#io-scan-unused-images').trigger('click');
+                        }
+                    }
+                    
+                    $btn.prop('disabled', false);
+                    $btn.html(originalText);
+                    return;
+                }
+                
+                var error = fixableErrors[index];
+                var errorType = detectErrorType(error.error);
+                
+                $.ajax({
+                    url: ioAdmin.ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'io_fix_scan_errors',
+                        nonce: ioAdmin.nonce,
+                        error_type: errorType,
+                        file_path: error.file || error.filename || ''
+                    },
+                    success: function(response) {
+                        if (response.success && response.data.fixed) {
+                            fixedCount++;
+                        } else {
+                            failedCount++;
+                        }
+                        index++;
+                        fixNextError();
+                    },
+                    error: function() {
+                        failedCount++;
+                        index++;
+                        fixNextError();
+                    }
+                });
+            }
+            
+            fixNextError();
+        });
+        
+        // View error details
+        $(document).on('click', '#io-view-error-details', function() {
+            // Switch to error files tab
+            if ($('#error-files-tab-li').is(':visible')) {
+                $('#error-files-tab-li a').trigger('click');
+                // Scroll to tab
+                $('html, body').animate({
+                    scrollTop: $('.io-file-lists').offset().top - 50
+                }, 500);
+            } else {
+                alert('ไม่มีรายละเอียดข้อผิดพลาด กรุณาแสกนอีกครั้ง');
+            }
+        });
+        
+        // Retry scan
+        $(document).on('click', '#io-retry-scan', function() {
+            $('#io-scan-unused-images').trigger('click');
+        });
+        
+        // Display error files from scan
+        function displayErrorFiles(errorFiles) {
+            var $list = $('#error-list');
+            
+            if ($list.length === 0) {
+                // Tab should exist in HTML, but if not, create it
+                console.warn('Error list container not found');
+                return;
+            }
+            
+            $list.empty();
+            
+            if (errorFiles.length === 0) {
+                $list.html('<p style="color: #646970; text-align: center; padding: 20px;">ไม่มีไฟล์ที่มีปัญหา</p>');
+                $('#error-files-tab-li').hide();
+                return;
+            }
+            
+            // Show error files tab
+            $('#error-files-tab-li').show();
+            $('#tab-error-count').text(errorFiles.length);
+            
+            var html = '<table class="wp-list-table widefat fixed striped" style="margin: 0;"><thead><tr>' +
+                '<th style="width: 50px;">ประเภท</th>' +
+                '<th>ไฟล์</th>' +
+                '<th style="width: 300px;">ข้อผิดพลาด</th>' +
+                '</tr></thead><tbody>';
+            
+            errorFiles.forEach(function(file) {
+                var filename = file.filename || (file.file ? file.file.split(/[\\/]/).pop() : file.file || 'N/A');
+                var errorMsg = file.error || 'Unknown error';
+                var fileType = file.type || 'unknown';
+                var typeLabel = {
+                    'thumbnails': 'Thumbnail',
+                    'webp': 'WebP',
+                    'orphaned': 'Orphaned',
+                    'system': 'System'
+                }[fileType] || fileType;
+                
+                html += '<tr style="background: #fff5f5;">';
+                html += '<td><span style="font-size: 11px; color: #646970;">' + escapeHtml(typeLabel) + '</span></td>';
+                html += '<td><code style="font-size: 11px; word-break: break-all; color: #d63638;">' + escapeHtml(filename) + '</code></td>';
+                html += '<td><span style="color: #d63638; font-size: 11px;" title="' + escapeHtml(errorMsg) + '">' + escapeHtml(errorMsg) + '</span></td>';
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            $list.html(html);
         }
         
         // Display failed files
@@ -478,22 +1039,87 @@
         
         // Delete all files
         $(document).on('click', '#io-delete-all', function() {
-            if (!confirm(ioAdmin.i18n.confirmDeleteAll || 'คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์ทั้งหมด? การลบไม่สามารถยกเลิกได้')) {
+            var total = (parseInt($('#io-delete-thumbnails-count').text()) || 0) + 
+                        (parseInt($('#io-delete-webp-count').text()) || 0) + 
+                        (parseInt($('#io-delete-orphaned-count').text()) || 0);
+            
+            if (!confirm(ioAdmin.i18n.confirmDeleteAll || 'คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์ทั้งหมด (' + total + ' ไฟล์)? การลบไม่สามารถยกเลิกได้')) {
                 return;
             }
             
-            deleteFiles([], true);
+            deleteFiles([], true, null, total);
         });
         
+        // Delete by type: Thumbnails
+        $(document).on('click', '#io-delete-thumbnails', function() {
+            var count = parseInt($('#io-delete-thumbnails-count').text()) || 0;
+            if (count === 0) {
+                alert('ไม่มี Thumbnails ที่จะลบ');
+                return;
+            }
+            
+            if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบ Thumbnails ทั้งหมด (' + count + ' ไฟล์)? การลบไม่สามารถยกเลิกได้')) {
+                return;
+            }
+            
+            deleteFilesByType('thumbnails');
+        });
+        
+        // Delete by type: WebP
+        $(document).on('click', '#io-delete-webp', function() {
+            var count = parseInt($('#io-delete-webp-count').text()) || 0;
+            if (count === 0) {
+                alert('ไม่มี WebP ที่จะลบ');
+                return;
+            }
+            
+            if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบ WebP ทั้งหมด (' + count + ' ไฟล์)? การลบไม่สามารถยกเลิกได้')) {
+                return;
+            }
+            
+            deleteFilesByType('webp');
+        });
+        
+        // Delete by type: Orphaned Images
+        $(document).on('click', '#io-delete-orphaned', function() {
+            var count = parseInt($('#io-delete-orphaned-count').text()) || 0;
+            if (count === 0) {
+                alert('ไม่มี Orphaned Images ที่จะลบ');
+                return;
+            }
+            
+            if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบ Orphaned Images ทั้งหมด (' + count + ' ไฟล์)? การลบไม่สามารถยกเลิกได้')) {
+                return;
+            }
+            
+            deleteFilesByType('orphaned');
+        });
+        
+        // Delete files by type
+        function deleteFilesByType(type) {
+            var count = parseInt($('#io-delete-' + type + '-count').text()) || 0;
+            
+            if (count === 0) {
+                alert('ไม่พบไฟล์ประเภท ' + type + ' ที่จะลบ');
+                return;
+            }
+            
+            console.log('Starting batch deletion for type: ' + type);
+            deleteFiles([], false, type, count);
+        }
+        
         // Delete files
-        function deleteFiles(filePaths, deleteAll) {
+        function deleteFiles(filePaths, deleteAll, deleteType, totalFiles) {
             var $progress = $('#io-delete-progress');
             var $progressBar = $('#io-delete-progress-bar');
             var $status = $('#io-delete-status');
             
-            $progress.show();
-            $progressBar.css('width', '0%');
-            $status.html('<span class="dashicons dashicons-update" style="animation: spin 1s linear infinite; display: inline-block;"></span> ' + (ioAdmin.i18n.deleting || 'กำลังลบ...'));
+            // Initialize progress UI
+            if (!$progress.is(':visible')) {
+                $progress.show();
+                $progressBar.css('width', '0%');
+                $status.html('<span class="dashicons dashicons-update" style="animation: spin 1s linear infinite; display: inline-block;"></span> ' + (ioAdmin.i18n.deleting || 'กำลังลบ...'));
+            }
             
             var ajaxData = {
                 action: 'io_delete_unused_images',
@@ -503,8 +1129,19 @@
             
             if (deleteAll) {
                 ajaxData.delete_all = true;
+            } else if (deleteType) {
+                ajaxData.delete_type = deleteType;
             } else {
                 ajaxData.files = filePaths;
+            }
+            
+            // Track accumulated stats for batch processing
+            if (typeof deleteFiles.stats === 'undefined') {
+                deleteFiles.stats = {
+                    deleted: 0,
+                    failed: 0,
+                    total: totalFiles || 0
+                };
             }
             
             $.ajax({
@@ -513,40 +1150,88 @@
                 data: ajaxData,
                 success: function(response) {
                     if (response.success) {
-                        $progressBar.css('width', '100%');
-                        var deleted = response.data.deleted || 0;
-                        var failed = response.data.failed || 0;
-                        var failedFiles = response.data.failed_files || [];
+                        var currentDeleted = response.data.deleted || 0;
+                        var currentFailed = response.data.failed || 0;
+                        var remaining = response.data.remaining || 0;
                         
-                        var statusMsg = (ioAdmin.i18n.deleteComplete || 'ลบเสร็จสิ้น') + ': ' + deleted + ' ไฟล์';
-                        if (failed > 0) {
-                            statusMsg += ', <span style="color: #d63638;">ลบไม่สำเร็จ: ' + failed + ' ไฟล์</span>';
-                        }
-                        $status.html('<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span> ' + statusMsg);
+                        // Update stats
+                        deleteFiles.stats.deleted += currentDeleted;
+                        deleteFiles.stats.failed += currentFailed;
                         
-                        // Display failed files if any
-                        if (failedFiles.length > 0) {
-                            displayFailedFiles(failedFiles);
-                            // Switch to failed tab after a short delay
-                            setTimeout(function() {
-                                if ($('#failed-files-tab-li').is(':visible')) {
-                                    $('#failed-files-tab-li a').trigger('click');
-                                }
-                            }, 500);
+                        // Calculate progress
+                        var percent = 100;
+                        if (deleteFiles.stats.total > 0 && remaining > 0) {
+                            // Start + Remaining = Total? No, Total decreases.
+                            // Better: (TotalOriginal - Remaining) / TotalOriginal * 100
+                            // We passed totalFiles as TotalOriginal
+                            var processed = deleteFiles.stats.total - remaining;
+                            percent = Math.min(95, Math.max(5, (processed / deleteFiles.stats.total) * 100));
                         }
                         
-                        // Refresh scan results
-                        setTimeout(function() {
-                            $('#io-scan-unused-images').trigger('click');
-                        }, 1000);
+                        $progressBar.css('width', percent + '%');
+                        
+                        // Update status message
+                        var statusMsg = (ioAdmin.i18n.deleting || 'กำลังลบ...') + ' ' + deleteFiles.stats.deleted + ' ไฟล์';
+                        if (remaining > 0) {
+                            statusMsg += ' (เหลือ ' + remaining + ')';
+                        }
+                        $status.html('<span class="dashicons dashicons-update" style="animation: spin 1s linear infinite; display: inline-block;"></span> ' + statusMsg);
+                        
+                        // Check if we need to continue (Batch processing)
+                        if (remaining > 0) {
+                            // Continue next batch
+                            console.log('Batch completed. Deleted: ' + currentDeleted + '. Remaining: ' + remaining + '. Continuing...');
+                            deleteFiles(filePaths, deleteAll, deleteType, deleteFiles.stats.total);
+                        } else {
+                            // All done
+                            finalizeDeletion(response.data.failed_files);
+                        }
                     } else {
                         $status.html('<span class="dashicons dashicons-dismiss" style="color: #d63638;"></span> ' + (response.data.message || 'เกิดข้อผิดพลาด'));
+                        // Reset stats
+                        delete deleteFiles.stats;
                     }
                 },
                 error: function() {
                     $status.html('<span class="dashicons dashicons-dismiss" style="color: #d63638;"></span> ' + (ioAdmin.i18n.deleteError || 'เกิดข้อผิดพลาดในการลบ'));
+                    delete deleteFiles.stats;
                 }
             });
+            
+            function finalizeDeletion(failedFiles) {
+                $progressBar.css('width', '100%');
+                
+                var statusMsg = (ioAdmin.i18n.deleteComplete || 'ลบเสร็จสิ้น') + ': ' + deleteFiles.stats.deleted + ' ไฟล์';
+                if (deleteFiles.stats.failed > 0) {
+                    statusMsg += ', <span style="color: #d63638;">ลบไม่สำเร็จ: ' + deleteFiles.stats.failed + ' ไฟล์</span>';
+                }
+                $status.html('<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span> ' + statusMsg);
+                
+                // Display failed files if any
+                if (failedFiles && failedFiles.length > 0) {
+                    displayFailedFiles(failedFiles);
+                    setTimeout(function() {
+                        if ($('#failed-files-tab-li').is(':visible')) {
+                            $('#failed-files-tab-li a').trigger('click');
+                        }
+                    }, 500);
+                }
+                
+                // Hide progress after delay
+                setTimeout(function() {
+                    $progress.fadeOut(500);
+                }, 3000);
+                
+                // Refresh scan results automatically
+                setTimeout(function() {
+                    console.log('Auto-refreshing scan results after deletion...');
+                    resetScanState();
+                    $('#io-scan-unused-images').trigger('click');
+                }, 2000);
+                
+                // Reset stats
+                delete deleteFiles.stats;
+            }
         }
         
         // Download report
@@ -571,24 +1256,123 @@
         };
         
         // Count images before regenerate
-        $(document).on('click', '#io-regenerate-images', function() {
-            var $btn = $(this);
-            $btn.prop('disabled', true);
+        // Clear dates button
+        $(document).on('click', '#io-regenerate-clear-dates', function() {
+            $('#io-regenerate-date-from').val('');
+            $('#io-regenerate-date-to').val('');
+            updateRegenerateStats();
+        });
+        
+        // Update stats when options change
+        function updateRegenerateStats() {
+            var regenerateType = $('#io-regenerate-type').val();
+            var dateFrom = $('#io-regenerate-date-from').val();
+            var dateTo = $('#io-regenerate-date-to').val();
+            var skipProcessed = $('#io-regenerate-skip-processed').is(':checked');
             
             $.ajax({
                 url: ioAdmin.ajaxurl,
                 type: 'POST',
                 data: {
                     action: 'io_count_images_for_regenerate',
-                    nonce: ioAdmin.nonce
+                    nonce: ioAdmin.nonce,
+                    regenerate_type: regenerateType,
+                    date_from: dateFrom,
+                    date_to: dateTo,
+                    skip_processed: skipProcessed
                 },
                 success: function(response) {
-                    if (response.success && response.data.count > 0) {
-                        regenerateState.total = response.data.count;
-                        $('#io-regenerate-total-count').text(response.data.count);
-                        $('#io-regenerate-preview').fadeIn(200);
+                    if (response.success) {
+                        $('#io-regenerate-stats-total').text(response.data.total || 0);
+                        $('#io-regenerate-stats-selected').text(response.data.selected || 0);
+                        $('#io-regenerate-stats-skipped').text(response.data.skipped || 0);
+                        $('#io-regenerate-stats').fadeIn(200);
+                    }
+                }
+            });
+        }
+        
+        // Watch for option changes
+        $('#io-regenerate-type, #io-regenerate-skip-processed').on('change', function() {
+            updateRegenerateStats();
+        });
+        
+        // Watch for date inputs - use both change and input events for better responsiveness
+        $('#io-regenerate-date-from, #io-regenerate-date-to').on('change input blur', function() {
+            // Small delay to avoid too many requests while typing
+            clearTimeout(window.regenerateStatsTimeout);
+            window.regenerateStatsTimeout = setTimeout(function() {
+                updateRegenerateStats();
+            }, 300);
+        });
+        
+        // Load stats on page load if regenerate tab is active
+        if ($('#io-tab-regenerate').is(':visible')) {
+            updateRegenerateStats();
+        }
+        
+        // Also load stats when switching to regenerate tab
+        $(document).on('click', '.io-main-tab[data-tab="regenerate"]', function() {
+            setTimeout(function() {
+                updateRegenerateStats();
+            }, 100);
+        });
+        
+        $(document).on('click', '#io-regenerate-images', function() {
+            var $btn = $(this);
+            $btn.prop('disabled', true);
+            
+            // Get options
+            var regenerateType = $('#io-regenerate-type').val();
+            var dateFrom = $('#io-regenerate-date-from').val();
+            var dateTo = $('#io-regenerate-date-to').val();
+            var skipProcessed = $('#io-regenerate-skip-processed').is(':checked');
+            var regenerateThumbnails = $('#io-regenerate-thumbnails').is(':checked');
+            var batchSize = parseInt($('#io-regenerate-batch-size').val()) || 10;
+            
+            // Store options in regenerateState
+            regenerateState.options = {
+                regenerate_type: regenerateType,
+                date_from: dateFrom,
+                date_to: dateTo,
+                skip_processed: skipProcessed,
+                regenerate_thumbnails: regenerateThumbnails,
+                batch_size: batchSize
+            };
+            
+            $.ajax({
+                url: ioAdmin.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'io_count_images_for_regenerate',
+                    nonce: ioAdmin.nonce,
+                    regenerate_type: regenerateType,
+                    date_from: dateFrom,
+                    date_to: dateTo,
+                    skip_processed: skipProcessed
+                },
+                success: function(response) {
+                    if (response.success) {
+                        var total = response.data.total || 0;
+                        var selected = response.data.selected || 0;
+                        var skipped = response.data.skipped || 0;
+                        
+                        if (selected > 0) {
+                            regenerateState.total = selected;
+                            $('#io-regenerate-total-count').text(selected);
+                            $('#io-regenerate-preview').fadeIn(200);
+                        } else {
+                            var message = 'ไม่พบภาพที่ต้อง Regenerate';
+                            if (total > 0 && skipped > 0) {
+                                message += '\n\nพบภาพทั้งหมด ' + total + ' ภาพ แต่ถูกข้ามทั้งหมด ' + skipped + ' ภาพ';
+                                message += '\nกรุณายกเลิกการเลือก "ข้ามภาพที่ Regenerate แล้ว" เพื่อ regenerate ใหม่';
+                            } else if (total === 0) {
+                                message += '\n\nไม่พบภาพในระบบ';
+                            }
+                            alert(message);
+                        }
                     } else {
-                        alert('ไม่พบภาพที่ต้อง Regenerate');
+                        alert('เกิดข้อผิดพลาด: ' + (response.data.message || 'ไม่ทราบสาเหตุ'));
                     }
                 },
                 error: function() {
@@ -678,23 +1462,34 @@
                 return;
             }
             
-            var batchSize = 10; // Process 10 images per batch
+            var batchSize = regenerateState.options ? regenerateState.options.batch_size : 10;
             
             // Cancel any pending request
             if (currentRegenerateRequest) {
                 currentRegenerateRequest.abort();
             }
             
+            var ajaxData = {
+                action: 'io_regenerate_images',
+                nonce: ioAdmin.nonce,
+                batch_size: batchSize,
+                offset: offset,
+                total: regenerateState.total
+            };
+            
+            // Add options if available
+            if (regenerateState.options) {
+                ajaxData.regenerate_type = regenerateState.options.regenerate_type;
+                ajaxData.date_from = regenerateState.options.date_from;
+                ajaxData.date_to = regenerateState.options.date_to;
+                ajaxData.skip_processed = regenerateState.options.skip_processed;
+                ajaxData.regenerate_thumbnails = regenerateState.options.regenerate_thumbnails;
+            }
+            
             currentRegenerateRequest = $.ajax({
                 url: ioAdmin.ajaxurl,
                 type: 'POST',
-                data: {
-                    action: 'io_regenerate_images',
-                    nonce: ioAdmin.nonce,
-                    batch_size: batchSize,
-                    offset: offset,
-                    total: regenerateState.total
-                },
+                data: ajaxData,
                 success: function(response) {
                     currentRegenerateRequest = null;
                     
@@ -767,7 +1562,7 @@
             
             // Update UI immediately
             $('#io-regenerate-status').html(
-                '<span style="color: #d63638; font-weight: 600; display: block; padding: 10px; background: #fcf0f1; border-left: 4px solid #d63638; border-radius: 4px;">' + 
+                '<span style="color: #d63638; font-weight: 600; display: block; padding: 10px; background: #fcf0f1; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' + 
                 '<span class="dashicons dashicons-dismiss" style="vertical-align: middle;"></span> ' +
                 (ioAdmin.i18n.regenerateCancelled || 'Regenerate ถูกยกเลิก') + 
                 '</span>'

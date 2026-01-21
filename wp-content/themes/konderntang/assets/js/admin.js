@@ -10,54 +10,128 @@
 
     $(document).ready(function() {
         
-        // Settings Groups Accordion
-        $('.konderntang-settings-group-header').on('click', function() {
-            const $group = $(this).closest('.konderntang-settings-group');
-            const $allGroups = $('.konderntang-settings-group');
+        // ============================================
+        // SIDEBAR NAVIGATION
+        // ============================================
+        
+        // Handle sidebar navigation clicks
+        $('.konderntang-nav-item').on('click', function(e) {
+            e.preventDefault();
+            const sectionId = $(this).data('section');
+            const $targetSection = $('#section-' + sectionId);
             
-            // Toggle current group
-            if ($group.hasClass('active')) {
-                $group.removeClass('active');
-            } else {
-                // Close all groups first
-                $allGroups.removeClass('active');
-                // Open clicked group
-                $group.addClass('active');
-            }
-        });
-        
-        // Auto-expand group containing active tab
-        $('.konderntang-settings-group').each(function() {
-            if ($(this).find('.konderntang-group-tab.active').length > 0) {
+            if ($targetSection.length) {
+                // Update active state
+                $('.konderntang-nav-item').removeClass('active');
                 $(this).addClass('active');
+                
+                // Scroll to section (fast scroll with shorter duration)
+                const offset = $('.konderntang-settings-header').outerHeight() + 40;
+                const targetPosition = $targetSection.offset().top - offset;
+                
+                // Use faster animation (200ms instead of 500ms)
+                $('html, body').animate({
+                    scrollTop: targetPosition
+                }, 200, 'linear', function() {
+                    // Expand section if collapsed
+                    $targetSection.addClass('active');
+                });
+                
+                // Update URL without reload
+                const newUrl = window.location.pathname + '?page=konderntang-settings&section=' + sectionId;
+                window.history.pushState({}, '', newUrl);
+                
+                // Save to localStorage
+                localStorage.setItem('konderntang_active_section', sectionId);
             }
         });
         
-        // Tab persistence with smooth scrolling
-        $('.konderntang-group-tab, .nav-tab').on('click', function() {
-            const href = $(this).attr('href');
-            if (href && href.indexOf('tab=') !== -1) {
-                const tab = href.split('tab=')[1].split('&')[0];
-                if (tab) {
-                    localStorage.setItem('konderntang_active_tab', tab);
-                }
-            }
-        });
-
-        // Restore active tab
-        const savedTab = localStorage.getItem('konderntang_active_tab');
-        if (savedTab) {
-            const tabLink = $('.konderntang-group-tab[href*="tab=' + savedTab + '"], .nav-tab[href*="tab=' + savedTab + '"]');
-            if (tabLink.length) {
-                // Expand the group containing this tab
-                tabLink.closest('.konderntang-settings-group').addClass('active');
-                $('html, body').animate({
-                    scrollTop: tabLink.offset().top - 100
-                }, 300);
+        // Restore active section from URL or localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlSection = urlParams.get('section');
+        const savedSection = localStorage.getItem('konderntang_active_section');
+        const activeSection = urlSection || savedSection || 'general';
+        
+        if (activeSection) {
+            const $navItem = $('.konderntang-nav-item[data-section="' + activeSection + '"]');
+            if ($navItem.length) {
+                $navItem.addClass('active');
+                setTimeout(function() {
+                    const $targetSection = $('#section-' + activeSection);
+                    if ($targetSection.length) {
+                        const offset = $('.konderntang-settings-header').outerHeight() + 40;
+                        $('html, body').scrollTop($targetSection.offset().top - offset);
+                    }
+                }, 100);
             }
         }
-
-        // Color picker preview and sync with text input
+        
+        // Highlight section on scroll
+        let scrollTimeout;
+        $(window).on('scroll', function() {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(function() {
+                const scrollTop = $(window).scrollTop();
+                const offset = $('.konderntang-settings-header').outerHeight() + 100;
+                
+                $('.konderntang-settings-section').each(function() {
+                    const $section = $(this);
+                    const sectionTop = $section.offset().top - offset;
+                    const sectionBottom = sectionTop + $section.outerHeight();
+                    
+                    if (scrollTop >= sectionTop && scrollTop < sectionBottom) {
+                        const sectionId = $section.data('section');
+                        $('.konderntang-nav-item').removeClass('active');
+                        $('.konderntang-nav-item[data-section="' + sectionId + '"]').addClass('active');
+                    }
+                });
+            }, 100);
+        });
+        
+        // ============================================
+        // SEARCH FUNCTIONALITY
+        // ============================================
+        
+        $('#konderntang-settings-search').on('input', function() {
+            const searchTerm = $(this).val().toLowerCase();
+            
+            if (searchTerm === '') {
+                $('.konderntang-nav-item').removeClass('hidden');
+                $('.konderntang-settings-section').show();
+            } else {
+                // Filter navigation items
+                $('.konderntang-nav-item').each(function() {
+                    const $item = $(this);
+                    const label = $item.find('.nav-item-label').text().toLowerCase();
+                    const desc = $item.find('.nav-item-desc').text().toLowerCase();
+                    
+                    if (label.includes(searchTerm) || desc.includes(searchTerm)) {
+                        $item.removeClass('hidden');
+                    } else {
+                        $item.addClass('hidden');
+                    }
+                });
+                
+                // Filter sections
+                $('.konderntang-settings-section').each(function() {
+                    const $section = $(this);
+                    const sectionId = $section.data('section');
+                    const $navItem = $('.konderntang-nav-item[data-section="' + sectionId + '"]');
+                    
+                    if ($navItem.hasClass('hidden')) {
+                        $section.hide();
+                    } else {
+                        $section.show();
+                    }
+                });
+            }
+        });
+        
+        // ============================================
+        // COLOR PICKER SYNC
+        // ============================================
+        
+        // Color picker to text input
         $('input[type="color"]').on('change', function() {
             const color = $(this).val();
             const $textInput = $(this).siblings('.konderntang-color-value');
@@ -65,8 +139,8 @@
                 $textInput.val(color);
             }
         });
-
-        // Sync text input to color picker
+        
+        // Text input to color picker
         $('.konderntang-color-value').on('input', function() {
             const color = $(this).val();
             const $colorInput = $(this).siblings('input[type="color"]');
@@ -74,9 +148,103 @@
                 $colorInput.val(color);
             }
         });
-
-        // Form validation feedback
+        
+        // ============================================
+        // MEDIA UPLOADER
+        // ============================================
+        
+        $('.media-upload-button').on('click', function(e) {
+            e.preventDefault();
+            const button = $(this);
+            const targetInput = $('#' + button.data('target'));
+            const imagePreview = button.closest('td').find('.konderntang-image-preview');
+            
+            const mediaUploader = wp.media({
+                title: konderntangAdmin.i18n.chooseImage || 'Choose Image',
+                button: {
+                    text: konderntangAdmin.i18n.useImage || 'Use Image'
+                },
+                multiple: false
+            });
+            
+            mediaUploader.on('select', function() {
+                const attachment = mediaUploader.state().get('selection').first().toJSON();
+                targetInput.val(attachment.url);
+                
+                if (imagePreview.length) {
+                    if (imagePreview.find('img').length === 0) {
+                        imagePreview.html('<img src="' + attachment.url + '" alt="Preview" />');
+                    } else {
+                        imagePreview.find('img').attr('src', attachment.url);
+                    }
+                    imagePreview.show();
+                }
+                
+                // Show remove button
+                button.siblings('.konderntang-remove-image').show();
+            });
+            
+            mediaUploader.open();
+        });
+        
+        // Remove image button
+        $('.konderntang-remove-image').on('click', function() {
+            const $this = $(this);
+            const targetInput = $('#' + $this.siblings('.media-upload-button').data('target'));
+            const imagePreview = $this.closest('td').find('.konderntang-image-preview');
+            
+            targetInput.val('');
+            imagePreview.hide().find('img').attr('src', '');
+            $this.hide();
+        });
+        
+        // Show preview on page load if image exists
+        function initImagePreviews() {
+            $('.konderntang-field-group input[type="text"]').each(function() {
+                const $input = $(this);
+                const imageUrl = $input.val().trim();
+                if (imageUrl) {
+                    const imagePreview = $input.closest('td').find('.konderntang-image-preview');
+                    if (imagePreview.length) {
+                        if (imagePreview.find('img').length === 0) {
+                            imagePreview.html('<img src="' + imageUrl + '" alt="Preview" />');
+                        } else {
+                            imagePreview.find('img').attr('src', imageUrl);
+                        }
+                        imagePreview.show();
+                        // Show remove button
+                        $input.siblings('.konderntang-remove-image').show();
+                    }
+                } else {
+                    // Hide preview and remove button if no image
+                    const imagePreview = $input.closest('td').find('.konderntang-image-preview');
+                    imagePreview.hide();
+                    $input.siblings('.konderntang-remove-image').hide();
+                }
+            });
+        }
+        
+        // Initialize on page load
+        initImagePreviews();
+        
+        // Also initialize after form submit (in case of redirect)
+        $(document).ready(function() {
+            initImagePreviews();
+        });
+        
+        // ============================================
+        // FORM VALIDATION
+        // ============================================
+        
         $('#konderntang-settings-form').on('submit', function(e) {
+            // Debug: Log form submit
+            console.log('KonDernTang Form Submit triggered');
+            console.log('Form data:', $(this).serialize());
+            
+            // Update active section before submit
+            const activeSection = $('.konderntang-nav-item.active').data('section') || 'general';
+            $('#active_section').val(activeSection);
+            
             let hasErrors = false;
             
             // Validate number inputs
@@ -86,7 +254,7 @@
                 const max = parseFloat($input.attr('max'));
                 const value = parseFloat($input.val());
                 
-                if (value < min || value > max) {
+                if (!isNaN(min) && !isNaN(max) && (value < min || value > max)) {
                     $input.css('border-color', '#ef4444');
                     hasErrors = true;
                     
@@ -103,23 +271,26 @@
             }
             
             // Show loading state
-            const $submitBtn = $(this).find('.button-primary');
-            const originalText = $submitBtn.val();
-            $submitBtn.val('กำลังบันทึก...').prop('disabled', true);
+            const $submitBtn = $(this).find('.konderntang-save-btn');
+            const originalText = $submitBtn.html();
+            $submitBtn.html('<span class="dashicons dashicons-update"></span> ' + 'กำลังบันทึก...').prop('disabled', true);
             
             // Re-enable after a delay (in case of error)
             setTimeout(function() {
-                $submitBtn.val(originalText).prop('disabled', false);
+                $submitBtn.html(originalText).prop('disabled', false);
             }, 5000);
         });
-
-        // Auto-save indicator
+        
+        // ============================================
+        // AUTO-SAVE INDICATOR
+        // ============================================
+        
         let saveTimeout;
         $('#konderntang-settings-form input, #konderntang-settings-form select, #konderntang-settings-form textarea').on('change', function() {
             clearTimeout(saveTimeout);
             
-            const $indicator = $('<span class="konderntang-auto-save-indicator" style="color: #10b981; margin-left: 10px; font-size: 12px;">⚡ มีการเปลี่ยนแปลง</span>');
-            const $submitBtn = $('#konderntang-settings-form .button-primary');
+            const $indicator = $('<span class="konderntang-auto-save-indicator" style="color: #10b981; margin-left: 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;"><span class="dashicons dashicons-edit" style="font-size: 14px;"></span> มีการเปลี่ยนแปลง</span>');
+            const $submitBtn = $('#konderntang-settings-form .konderntang-save-btn');
             
             $submitBtn.siblings('.konderntang-auto-save-indicator').remove();
             $submitBtn.after($indicator);
@@ -130,110 +301,60 @@
                 });
             }, 3000);
         });
-
-        // Collapsible sections (for better organization)
-        $('.konderntang-section-header').on('click', function() {
-            const $section = $(this).next('.konderntang-section-content');
-            $section.slideToggle();
-            $(this).find('.dashicons').toggleClass('dashicons-arrow-down-alt2 dashicons-arrow-up-alt2');
-        });
-
-        // Tooltip initialization
-        $('.konderntang-tooltip').each(function() {
-            const tooltip = $(this).attr('data-tooltip');
-            if (tooltip) {
-                $(this).attr('title', tooltip);
+        
+        // ============================================
+        // SMOOTH SCROLL FOR ANCHOR LINKS
+        // ============================================
+        
+        $('a[href^="#section-"]').on('click', function(e) {
+            e.preventDefault();
+            const target = $(this.getAttribute('href'));
+            if (target.length) {
+                const offset = $('.konderntang-settings-header').outerHeight() + 40;
+                const targetPosition = target.offset().top - offset;
+                
+                // Use faster animation (200ms)
+                $('html, body').animate({
+                    scrollTop: targetPosition
+                }, 200, 'linear');
             }
         });
-
-        // Enhanced media uploader with preview
-        $('.media-upload-button').on('click', function(e) {
-            e.preventDefault();
-            const button = $(this);
-            const targetInput = $('#' + button.data('target'));
-            const previewContainer = targetInput.siblings('.konderntang-image-preview');
+        
+        // ============================================
+        // KEYBOARD SHORTCUTS
+        // ============================================
+        
+        $(document).on('keydown', function(e) {
+            // Ctrl/Cmd + S to save
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                $('#konderntang-settings-form').submit();
+            }
             
-            const mediaUploader = wp.media({
-                title: 'เลือกภาพ',
-                button: {
-                    text: 'ใช้ภาพนี้'
-                },
-                multiple: false
-            });
-            
-            mediaUploader.on('select', function() {
-                const attachment = mediaUploader.state().get('selection').first().toJSON();
-                targetInput.val(attachment.url);
-                
-                // Show preview
-                if (previewContainer.length === 0) {
-                    const preview = $('<div class="konderntang-image-preview" style="margin-top: 10px;"><img src="" style="max-width: 200px; height: auto; border-radius: 6px; border: 1px solid #e2e8f0;" /></div>');
-                    targetInput.after(preview);
-                    preview.find('img').attr('src', attachment.url);
-                } else {
-                    previewContainer.find('img').attr('src', attachment.url);
-                }
-            });
-            
-            mediaUploader.open();
+            // Ctrl/Cmd + K to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                $('#konderntang-settings-search').focus();
+            }
         });
-
-        // Remove image preview
-        $(document).on('click', '.konderntang-remove-image', function() {
-            const $preview = $(this).closest('.konderntang-image-preview');
-            const $input = $preview.siblings('input[type="text"]');
-            $input.val('');
-            $preview.fadeOut(function() {
-                $(this).remove();
-            });
+        
+        // ============================================
+        // SECTION COLLAPSE/EXPAND (Optional)
+        // ============================================
+        
+        $('.konderntang-section-header').on('click', function() {
+            const $section = $(this).closest('.konderntang-settings-section');
+            const $content = $section.find('.konderntang-section-content');
+            
+            if ($section.hasClass('collapsed')) {
+                $section.removeClass('collapsed');
+                $content.slideDown(300);
+            } else {
+                $section.addClass('collapsed');
+                $content.slideUp(300);
+            }
         });
-
-        // Number input steppers
-        $('input[type="number"]').each(function() {
-            const $input = $(this);
-            const wrapper = $('<div class="konderntang-number-wrapper" style="display: inline-flex; align-items: center; gap: 5px;"></div>');
-            
-            $input.wrap(wrapper);
-            
-            const $decrease = $('<button type="button" class="button kecil" style="padding: 4px 8px;">−</button>');
-            const $increase = $('<button type="button" class="button kecil" style="padding: 4px 8px;">+</button>');
-            
-            $input.before($decrease);
-            $input.after($increase);
-            
-            $decrease.on('click', function() {
-                const min = parseFloat($input.attr('min')) || 0;
-                const current = parseFloat($input.val()) || 0;
-                const step = parseFloat($input.attr('step')) || 1;
-                const newValue = Math.max(min, current - step);
-                $input.val(newValue).trigger('change');
-            });
-            
-            $increase.on('click', function() {
-                const max = parseFloat($input.attr('max')) || 100;
-                const current = parseFloat($input.val()) || 0;
-                const step = parseFloat($input.attr('step')) || 1;
-                const newValue = Math.min(max, current + step);
-                $input.val(newValue).trigger('change');
-            });
-        });
-
-        // Copy to clipboard functionality
-        $('.konderntang-copy-button').on('click', function(e) {
-            e.preventDefault();
-            const text = $(this).data('copy');
-            const $temp = $('<textarea>');
-            $('body').append($temp);
-            $temp.val(text).select();
-            document.execCommand('copy');
-            $temp.remove();
-            
-            const originalText = $(this).text();
-            $(this).text('คัดลอกแล้ว!').css('color', '#10b981');
-            
-            setTimeout(function() {
-                $(this).text(originalText).css('color', '');
-            }.bind(this), 2000);
-        });
+        
     });
+    
 })(jQuery);

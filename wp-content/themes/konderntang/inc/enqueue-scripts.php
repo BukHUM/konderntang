@@ -31,6 +31,14 @@ function konderntang_scripts()
         null
     );
 
+    // Font Awesome (for menu icons)
+    wp_enqueue_style(
+        'konderntang-fontawesome',
+        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+        array(),
+        '6.4.0'
+    );
+
     // Phosphor Icons
     wp_enqueue_script(
         'konderntang-phosphor-icons',
@@ -286,6 +294,9 @@ function konderntang_admin_scripts($hook)
     // Add timestamp to force reload
     $js_version = $js_version . '.' . time();
     
+    // Enqueue WordPress Media
+    wp_enqueue_media();
+
     // Admin CSS
     wp_enqueue_style(
         'konderntang-admin',
@@ -301,6 +312,18 @@ function konderntang_admin_scripts($hook)
         array('jquery'),
         $js_version,
         true
+    );
+
+    // Localize script
+    wp_localize_script(
+        'konderntang-admin',
+        'konderntangAdmin',
+        array(
+            'i18n' => array(
+                'chooseImage' => __('Choose Image', 'konderntang'),
+                'useImage' => __('Use Image', 'konderntang'),
+            ),
+        )
     );
 }
 add_action('admin_enqueue_scripts', 'konderntang_admin_scripts');

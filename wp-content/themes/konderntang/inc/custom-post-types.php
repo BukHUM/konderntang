@@ -209,3 +209,41 @@ function konderntang_register_taxonomies() {
     );
 }
 add_action( 'init', 'konderntang_register_taxonomies' );
+
+/**
+ * Force Destinations and Travel Types to show only in Posts menu
+ * This ensures they appear under Posts menu instead of Travel Guides menu
+ */
+function konderntang_taxonomy_menu_placement( $parent_file ) {
+    global $current_screen;
+    
+    // Force Destinations and Travel Types to show under Posts menu
+    if ( isset( $current_screen->taxonomy ) ) {
+        if ( in_array( $current_screen->taxonomy, array( 'destination', 'travel_type' ), true ) ) {
+            return 'edit.php';
+        }
+    }
+    
+    return $parent_file;
+}
+add_filter( 'parent_file', 'konderntang_taxonomy_menu_placement' );
+
+/**
+ * Remove taxonomy submenus from Travel Guides menu
+ */
+function konderntang_remove_taxonomy_from_cpt_menu() {
+    global $submenu;
+    
+    // Remove Destinations and Travel Types from Travel Guides menu
+    if ( isset( $submenu['edit.php?post_type=travel_guide'] ) ) {
+        foreach ( $submenu['edit.php?post_type=travel_guide'] as $key => $item ) {
+            if ( isset( $item[2] ) ) {
+                if ( strpos( $item[2], 'taxonomy=destination' ) !== false || 
+                     strpos( $item[2], 'taxonomy=travel_type' ) !== false ) {
+                    unset( $submenu['edit.php?post_type=travel_guide'][ $key ] );
+                }
+            }
+        }
+    }
+}
+add_action( 'admin_menu', 'konderntang_remove_taxonomy_from_cpt_menu', 999 );
