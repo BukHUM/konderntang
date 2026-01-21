@@ -141,6 +141,88 @@ function konderntang_save_settings() {
         set_theme_mod( 'cookie_consent_message', sanitize_textarea_field( $_POST['cookie_consent_message'] ) );
     }
     
+    if ( isset( $_POST['cookie_consent_privacy_page'] ) ) {
+        set_theme_mod( 'cookie_consent_privacy_page', absint( $_POST['cookie_consent_privacy_page'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_position'] ) ) {
+        set_theme_mod( 'cookie_consent_position', sanitize_text_field( $_POST['cookie_consent_position'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_style'] ) ) {
+        set_theme_mod( 'cookie_consent_style', sanitize_text_field( $_POST['cookie_consent_style'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_bg_color'] ) ) {
+        set_theme_mod( 'cookie_consent_bg_color', sanitize_hex_color( $_POST['cookie_consent_bg_color'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_text_color'] ) ) {
+        set_theme_mod( 'cookie_consent_text_color', sanitize_hex_color( $_POST['cookie_consent_text_color'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_button_bg'] ) ) {
+        set_theme_mod( 'cookie_consent_button_bg', sanitize_hex_color( $_POST['cookie_consent_button_bg'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_button_text'] ) ) {
+        set_theme_mod( 'cookie_consent_button_text', sanitize_hex_color( $_POST['cookie_consent_button_text'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_accept_text'] ) ) {
+        set_theme_mod( 'cookie_consent_accept_text', sanitize_text_field( $_POST['cookie_consent_accept_text'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_decline_text'] ) ) {
+        set_theme_mod( 'cookie_consent_decline_text', sanitize_text_field( $_POST['cookie_consent_decline_text'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_settings_text'] ) ) {
+        set_theme_mod( 'cookie_consent_settings_text', sanitize_text_field( $_POST['cookie_consent_settings_text'] ) );
+    }
+    
+    $cookie_consent_show_decline = isset( $_POST['cookie_consent_show_decline'] ) ? '1' : '0';
+    set_theme_mod( 'cookie_consent_show_decline', $cookie_consent_show_decline );
+    
+    $cookie_consent_auto_hide = isset( $_POST['cookie_consent_auto_hide'] ) ? '1' : '0';
+    set_theme_mod( 'cookie_consent_auto_hide', $cookie_consent_auto_hide );
+    
+    if ( isset( $_POST['cookie_consent_auto_hide_delay'] ) ) {
+        $delay = absint( $_POST['cookie_consent_auto_hide_delay'] );
+        if ( $delay >= 5 && $delay <= 60 ) {
+            set_theme_mod( 'cookie_consent_auto_hide_delay', $delay );
+        }
+    }
+    
+    // Cookie Categories
+    $cookie_consent_necessary = isset( $_POST['cookie_consent_necessary'] ) ? '1' : '0';
+    set_theme_mod( 'cookie_consent_necessary', $cookie_consent_necessary );
+    
+    $cookie_consent_analytics = isset( $_POST['cookie_consent_analytics'] ) ? '1' : '0';
+    set_theme_mod( 'cookie_consent_analytics', $cookie_consent_analytics );
+    
+    $cookie_consent_marketing = isset( $_POST['cookie_consent_marketing'] ) ? '1' : '0';
+    set_theme_mod( 'cookie_consent_marketing', $cookie_consent_marketing );
+    
+    $cookie_consent_functional = isset( $_POST['cookie_consent_functional'] ) ? '1' : '0';
+    set_theme_mod( 'cookie_consent_functional', $cookie_consent_functional );
+    
+    if ( isset( $_POST['cookie_consent_necessary_desc'] ) ) {
+        set_theme_mod( 'cookie_consent_necessary_desc', sanitize_textarea_field( $_POST['cookie_consent_necessary_desc'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_analytics_desc'] ) ) {
+        set_theme_mod( 'cookie_consent_analytics_desc', sanitize_textarea_field( $_POST['cookie_consent_analytics_desc'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_marketing_desc'] ) ) {
+        set_theme_mod( 'cookie_consent_marketing_desc', sanitize_textarea_field( $_POST['cookie_consent_marketing_desc'] ) );
+    }
+    
+    if ( isset( $_POST['cookie_consent_functional_desc'] ) ) {
+        set_theme_mod( 'cookie_consent_functional_desc', sanitize_textarea_field( $_POST['cookie_consent_functional_desc'] ) );
+    }
+    
     // Homepage Settings
     $hero_slider_enabled = isset( $_POST['hero_slider_enabled'] ) ? '1' : '0';
     set_theme_mod( 'hero_slider_enabled', $hero_slider_enabled );
@@ -317,6 +399,73 @@ function konderntang_save_settings() {
     $toc_scroll_spy = isset( $_POST['toc_scroll_spy'] ) ? '1' : '0';
     set_theme_mod( 'toc_scroll_spy', $toc_scroll_spy );
     
+    // Social Media Settings - Profiles
+    $social_platforms = array( 'facebook', 'twitter', 'instagram', 'youtube', 'tiktok', 'line', 'pinterest', 'linkedin' );
+    foreach ( $social_platforms as $platform ) {
+        $key = 'social_' . $platform;
+        if ( isset( $_POST[ $key ] ) ) {
+            $url = esc_url_raw( trim( $_POST[ $key ] ) );
+            set_theme_mod( $key, $url );
+        }
+    }
+    
+    // Social Media Settings - Display Options
+    $social_show_header = isset( $_POST['social_show_header'] ) ? '1' : '0';
+    set_theme_mod( 'social_show_header', $social_show_header );
+    
+    $social_show_footer = isset( $_POST['social_show_footer'] ) ? '1' : '0';
+    set_theme_mod( 'social_show_footer', $social_show_footer );
+    
+    if ( isset( $_POST['social_icon_style'] ) ) {
+        $icon_style = sanitize_text_field( $_POST['social_icon_style'] );
+        if ( in_array( $icon_style, array( 'default', 'rounded', 'square', 'outline' ), true ) ) {
+            set_theme_mod( 'social_icon_style', $icon_style );
+        }
+    }
+    
+    if ( isset( $_POST['social_icon_size'] ) ) {
+        $icon_size = sanitize_text_field( $_POST['social_icon_size'] );
+        if ( in_array( $icon_size, array( 'small', 'medium', 'large' ), true ) ) {
+            set_theme_mod( 'social_icon_size', $icon_size );
+        }
+    }
+    
+    $social_open_new_tab = isset( $_POST['social_open_new_tab'] ) ? '1' : '0';
+    set_theme_mod( 'social_open_new_tab', $social_open_new_tab );
+    
+    // Social Sharing Settings
+    $share_enabled = isset( $_POST['share_enabled'] ) ? '1' : '0';
+    set_theme_mod( 'share_enabled', $share_enabled );
+    
+    if ( isset( $_POST['share_position'] ) ) {
+        $share_position = sanitize_text_field( $_POST['share_position'] );
+        if ( in_array( $share_position, array( 'top', 'bottom', 'both', 'floating' ), true ) ) {
+            set_theme_mod( 'share_position', $share_position );
+        }
+    }
+    
+    if ( isset( $_POST['share_style'] ) ) {
+        $share_style = sanitize_text_field( $_POST['share_style'] );
+        if ( in_array( $share_style, array( 'icon', 'icon-text', 'button' ), true ) ) {
+            set_theme_mod( 'share_style', $share_style );
+        }
+    }
+    
+    if ( isset( $_POST['share_platforms'] ) && is_array( $_POST['share_platforms'] ) ) {
+        $allowed_platforms = array( 'facebook', 'twitter', 'line', 'email', 'copy', 'pinterest', 'linkedin', 'whatsapp' );
+        $share_platforms = array_intersect( array_map( 'sanitize_text_field', $_POST['share_platforms'] ), $allowed_platforms );
+        set_theme_mod( 'share_platforms', $share_platforms );
+    } else {
+        set_theme_mod( 'share_platforms', array() );
+    }
+    
+    $share_show_count = isset( $_POST['share_show_count'] ) ? '1' : '0';
+    set_theme_mod( 'share_show_count', $share_show_count );
+    
+    if ( isset( $_POST['share_label'] ) ) {
+        set_theme_mod( 'share_label', sanitize_text_field( $_POST['share_label'] ) );
+    }
+    
     // Advanced Settings
     if ( isset( $_POST['advanced_custom_css'] ) ) {
         set_theme_mod( 'advanced_custom_css', wp_strip_all_tags( $_POST['advanced_custom_css'] ) );
@@ -386,15 +535,10 @@ function konderntang_settings_page_render() {
             'icon' => 'dashicons-admin-generic',
             'description' => esc_html__( 'Basic theme settings', 'konderntang' ),
         ),
-        'header' => array(
-            'label' => esc_html__( 'Header', 'konderntang' ),
+        'header-footer' => array(
+            'label' => esc_html__( 'Header & Footer', 'konderntang' ),
             'icon' => 'dashicons-admin-appearance',
-            'description' => esc_html__( 'Header navigation settings', 'konderntang' ),
-        ),
-        'footer' => array(
-            'label' => esc_html__( 'Footer', 'konderntang' ),
-            'icon' => 'dashicons-arrow-down-alt',
-            'description' => esc_html__( 'Footer layout and content', 'konderntang' ),
+            'description' => esc_html__( 'Header and footer settings', 'konderntang' ),
         ),
         'homepage' => array(
             'label' => esc_html__( 'Homepage', 'konderntang' ),
@@ -420,6 +564,11 @@ function konderntang_settings_page_render() {
             'label' => esc_html__( 'Table of Contents', 'konderntang' ),
             'icon' => 'dashicons-list-view',
             'description' => esc_html__( 'TOC display options', 'konderntang' ),
+        ),
+        'social' => array(
+            'label' => esc_html__( 'Social Media', 'konderntang' ),
+            'icon' => 'dashicons-share',
+            'description' => esc_html__( 'Social profiles and sharing', 'konderntang' ),
         ),
         'cookie' => array(
             'label' => esc_html__( 'Cookie Consent', 'konderntang' ),
@@ -462,8 +611,33 @@ function konderntang_settings_page_render() {
     
     $footer_layout = konderntang_get_option( 'footer_layout', '0' );
     $footer_copyright_text = konderntang_get_option( 'footer_copyright_text', sprintf( esc_html__( '&copy; %1$s %2$s - %3$s', 'konderntang' ), date( 'Y' ), get_bloginfo( 'name' ), esc_html__( 'เพื่อนเดินทางของคุณ', 'konderntang' ) ) );
+    
+    // Cookie Consent Settings
     $cookie_consent_enabled = konderntang_get_option( 'cookie_consent_enabled', true );
     $cookie_consent_message = konderntang_get_option( 'cookie_consent_message', esc_html__( 'เราใช้คุกกี้เพื่อปรับปรุงประสบการณ์การใช้งานของคุณ', 'konderntang' ) );
+    $cookie_consent_privacy_page = konderntang_get_option( 'cookie_consent_privacy_page', 0 );
+    $cookie_consent_position = konderntang_get_option( 'cookie_consent_position', 'bottom' );
+    $cookie_consent_style = konderntang_get_option( 'cookie_consent_style', 'bar' );
+    $cookie_consent_bg_color = konderntang_get_option( 'cookie_consent_bg_color', '#ffffff' );
+    $cookie_consent_text_color = konderntang_get_option( 'cookie_consent_text_color', '#374151' );
+    $cookie_consent_button_bg = konderntang_get_option( 'cookie_consent_button_bg', '#3b82f6' );
+    $cookie_consent_button_text = konderntang_get_option( 'cookie_consent_button_text', '#ffffff' );
+    $cookie_consent_accept_text = konderntang_get_option( 'cookie_consent_accept_text', esc_html__( 'ยอมรับทั้งหมด', 'konderntang' ) );
+    $cookie_consent_decline_text = konderntang_get_option( 'cookie_consent_decline_text', esc_html__( 'ปฏิเสธทั้งหมด', 'konderntang' ) );
+    $cookie_consent_settings_text = konderntang_get_option( 'cookie_consent_settings_text', esc_html__( 'ตั้งค่า', 'konderntang' ) );
+    $cookie_consent_show_decline = konderntang_get_option( 'cookie_consent_show_decline', true );
+    $cookie_consent_auto_hide = konderntang_get_option( 'cookie_consent_auto_hide', false );
+    $cookie_consent_auto_hide_delay = konderntang_get_option( 'cookie_consent_auto_hide_delay', 10 );
+    
+    // Cookie Categories
+    $cookie_consent_necessary = konderntang_get_option( 'cookie_consent_necessary', true );
+    $cookie_consent_analytics = konderntang_get_option( 'cookie_consent_analytics', true );
+    $cookie_consent_marketing = konderntang_get_option( 'cookie_consent_marketing', true );
+    $cookie_consent_functional = konderntang_get_option( 'cookie_consent_functional', true );
+    $cookie_consent_necessary_desc = konderntang_get_option( 'cookie_consent_necessary_desc', esc_html__( 'คุกกี้ที่จำเป็นสำหรับการทำงานพื้นฐานของเว็บไซต์', 'konderntang' ) );
+    $cookie_consent_analytics_desc = konderntang_get_option( 'cookie_consent_analytics_desc', esc_html__( 'คุกกี้สำหรับวิเคราะห์การใช้งานเว็บไซต์เพื่อปรับปรุงประสบการณ์', 'konderntang' ) );
+    $cookie_consent_marketing_desc = konderntang_get_option( 'cookie_consent_marketing_desc', esc_html__( 'คุกกี้สำหรับการตลาดและโฆษณาที่ตรงกับความสนใจของคุณ', 'konderntang' ) );
+    $cookie_consent_functional_desc = konderntang_get_option( 'cookie_consent_functional_desc', esc_html__( 'คุกกี้สำหรับฟังก์ชันเสริมเช่นการแชร์โซเชียลมีเดีย', 'konderntang' ) );
     
     // Homepage Settings
     $hero_slider_enabled = konderntang_get_option( 'hero_slider_enabled', true );
@@ -517,6 +691,32 @@ function konderntang_settings_page_render() {
     $toc_smooth_scroll = konderntang_get_option( 'toc_smooth_scroll', true );
     $toc_scroll_spy = konderntang_get_option( 'toc_scroll_spy', true );
 
+    // Social Media Settings
+    $social_facebook = konderntang_get_option( 'social_facebook', '' );
+    $social_twitter = konderntang_get_option( 'social_twitter', '' );
+    $social_instagram = konderntang_get_option( 'social_instagram', '' );
+    $social_youtube = konderntang_get_option( 'social_youtube', '' );
+    $social_tiktok = konderntang_get_option( 'social_tiktok', '' );
+    $social_line = konderntang_get_option( 'social_line', '' );
+    $social_pinterest = konderntang_get_option( 'social_pinterest', '' );
+    $social_linkedin = konderntang_get_option( 'social_linkedin', '' );
+    $social_show_header = konderntang_get_option( 'social_show_header', false );
+    $social_show_footer = konderntang_get_option( 'social_show_footer', true );
+    $social_icon_style = konderntang_get_option( 'social_icon_style', 'default' );
+    $social_icon_size = konderntang_get_option( 'social_icon_size', 'medium' );
+    $social_open_new_tab = konderntang_get_option( 'social_open_new_tab', true );
+
+    // Social Sharing Settings
+    $share_enabled = konderntang_get_option( 'share_enabled', true );
+    $share_position = konderntang_get_option( 'share_position', 'bottom' );
+    $share_style = konderntang_get_option( 'share_style', 'icon' );
+    $share_platforms = konderntang_get_option( 'share_platforms', array( 'facebook', 'twitter', 'line', 'copy' ) );
+    if ( ! is_array( $share_platforms ) ) {
+        $share_platforms = array( 'facebook', 'twitter', 'line', 'copy' );
+    }
+    $share_show_count = konderntang_get_option( 'share_show_count', false );
+    $share_label = konderntang_get_option( 'share_label', esc_html__( 'แชร์บทความนี้', 'konderntang' ) );
+
     // Advanced Settings
     $advanced_custom_css = konderntang_get_option( 'advanced_custom_css', '' );
     $advanced_custom_js = konderntang_get_option( 'advanced_custom_js', '' );
@@ -567,7 +767,7 @@ function konderntang_settings_page_render() {
         <form method="post" action="" id="konderntang-settings-form">
             <?php wp_nonce_field( 'konderntang_settings_nonce' ); ?>
             <input type="hidden" name="active_section" id="active_section" value="<?php echo esc_attr( $active_section ); ?>" />
-                    
+            
                     <!-- General Settings -->
                     <div class="konderntang-settings-section" id="section-general" data-section="general">
                         <div class="konderntang-section-header">
@@ -645,19 +845,28 @@ function konderntang_settings_page_render() {
                         </div>
                     </div>
                     
-                    <!-- Header Settings -->
-                    <div class="konderntang-settings-section" id="section-header" data-section="header">
+                    <!-- Header & Footer Settings -->
+                    <div class="konderntang-settings-section" id="section-header-footer" data-section="header-footer">
                         <div class="konderntang-section-header">
                             <div class="section-header-content">
                                 <span class="dashicons dashicons-admin-appearance"></span>
                                 <div>
-                                    <h2><?php esc_html_e( 'Header Settings', 'konderntang' ); ?></h2>
-                                    <p><?php esc_html_e( 'Configure header navigation', 'konderntang' ); ?></p>
+                                    <h2><?php esc_html_e( 'Header & Footer Settings', 'konderntang' ); ?></h2>
+                                    <p><?php esc_html_e( 'Configure header and footer sections', 'konderntang' ); ?></p>
                                 </div>
                             </div>
                         </div>
                         <div class="konderntang-section-content">
                 <table class="form-table">
+                    <!-- Header Settings -->
+                    <tr>
+                        <th scope="row" colspan="2">
+                            <h3 style="margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+                                <span class="dashicons dashicons-admin-appearance"></span>
+                                <?php esc_html_e( 'Header Settings', 'konderntang' ); ?>
+                            </h3>
+                        </th>
+                    </tr>
                     <tr>
                         <th scope="row">
                                         <span class="dashicons dashicons-search"></span>
@@ -728,8 +937,8 @@ function konderntang_settings_page_render() {
                             </div>
                         </td>
                     </tr>
-                    <?php endif; ?>
-                    
+            <?php endif; ?>
+            
                     <!-- Geo-Location Detection -->
                     <tr>
                         <th scope="row">
@@ -881,23 +1090,17 @@ function konderntang_settings_page_render() {
                             <?php endif; ?>
                         </td>
                     </tr>
-                </table>
-                        </div>
-                    </div>
                     
                     <!-- Footer Settings -->
-                    <div class="konderntang-settings-section" id="section-footer" data-section="footer">
-                        <div class="konderntang-section-header">
-                            <div class="section-header-content">
+                    <tr>
+                        <th scope="row" colspan="2">
+                            <h3 style="margin: 10px 0 10px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
                                 <span class="dashicons dashicons-arrow-down-alt"></span>
-                                <div>
-                                    <h2><?php esc_html_e( 'Footer Settings', 'konderntang' ); ?></h2>
-                                    <p><?php esc_html_e( 'Footer layout and content', 'konderntang' ); ?></p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="konderntang-section-content">
-                <table class="form-table">
+                                <?php esc_html_e( 'Footer Settings', 'konderntang' ); ?>
+                            </h3>
+                        </th>
+                    </tr>
+                    
                     <tr>
                         <th scope="row">
                                         <label for="footer_layout">
@@ -1454,14 +1657,14 @@ function konderntang_settings_page_render() {
                     <tr>
                         <th scope="row">
                                         <span class="dashicons dashicons-list-view"></span>
-                                        <?php esc_html_e( 'Table of Contents', 'konderntang' ); ?>
+                            <?php esc_html_e( 'Table of Contents', 'konderntang' ); ?>
                         </th>
                         <td>
                                         <label class="konderntang-toggle">
-                                            <input type="checkbox" name="toc_enabled" value="1" <?php checked( $toc_enabled, true ); ?> />
+                                <input type="checkbox" name="toc_enabled" value="1" <?php checked( $toc_enabled, true ); ?> />
                                             <span class="toggle-slider"></span>
                                             <span class="toggle-label"><?php esc_html_e( 'Enable Table of Contents globally', 'konderntang' ); ?></span>
-                                        </label>
+                            </label>
                                         <p class="description">
                                             <?php esc_html_e( 'Note: Individual posts can override this setting via the TOC meta box.', 'konderntang' ); ?>
                                         </p>
@@ -1489,17 +1692,17 @@ function konderntang_settings_page_render() {
                         <td>
                                         <div class="konderntang-checkbox-group">
                                             <label class="konderntang-checkbox-label">
-                                                <input type="checkbox" name="toc_heading_levels[]" value="h2" <?php checked( in_array( 'h2', $toc_heading_levels, true ) ); ?> />
+                                <input type="checkbox" name="toc_heading_levels[]" value="h2" <?php checked( in_array( 'h2', $toc_heading_levels, true ) ); ?> />
                                                 <span><?php esc_html_e( 'H2', 'konderntang' ); ?></span>
                                             </label>
                                             <label class="konderntang-checkbox-label">
-                                                <input type="checkbox" name="toc_heading_levels[]" value="h3" <?php checked( in_array( 'h3', $toc_heading_levels, true ) ); ?> />
+                                <input type="checkbox" name="toc_heading_levels[]" value="h3" <?php checked( in_array( 'h3', $toc_heading_levels, true ) ); ?> />
                                                 <span><?php esc_html_e( 'H3', 'konderntang' ); ?></span>
                                             </label>
                                             <label class="konderntang-checkbox-label">
-                                                <input type="checkbox" name="toc_heading_levels[]" value="h4" <?php checked( in_array( 'h4', $toc_heading_levels, true ) ); ?> />
+                                <input type="checkbox" name="toc_heading_levels[]" value="h4" <?php checked( in_array( 'h4', $toc_heading_levels, true ) ); ?> />
                                                 <span><?php esc_html_e( 'H4', 'konderntang' ); ?></span>
-                                            </label>
+                            </label>
                                         </div>
                                         <p class="description">
                                             <?php esc_html_e( 'เลือกหัวข้อที่จะรวมในสารบัญ', 'konderntang' ); ?>
@@ -1523,28 +1726,370 @@ function konderntang_settings_page_render() {
                     <tr>
                         <th scope="row">
                                         <span class="dashicons dashicons-admin-settings"></span>
-                                        <?php esc_html_e( 'TOC Options', 'konderntang' ); ?>
+                            <?php esc_html_e( 'TOC Options', 'konderntang' ); ?>
                         </th>
                         <td>
                                         <div class="konderntang-checkbox-group">
                                             <label class="konderntang-checkbox-label">
-                                                <input type="checkbox" name="toc_collapsible" value="1" <?php checked( $toc_collapsible, true ); ?> />
+                                <input type="checkbox" name="toc_collapsible" value="1" <?php checked( $toc_collapsible, true ); ?> />
                                                 <span><?php esc_html_e( 'Collapsible TOC', 'konderntang' ); ?></span>
                             </label>
                                             <label class="konderntang-checkbox-label">
-                                                <input type="checkbox" name="toc_smooth_scroll" value="1" <?php checked( $toc_smooth_scroll, true ); ?> />
+                                <input type="checkbox" name="toc_smooth_scroll" value="1" <?php checked( $toc_smooth_scroll, true ); ?> />
                                                 <span><?php esc_html_e( 'Smooth scroll navigation', 'konderntang' ); ?></span>
                                             </label>
                                             <label class="konderntang-checkbox-label">
-                                                <input type="checkbox" name="toc_scroll_spy" value="1" <?php checked( $toc_scroll_spy, true ); ?> />
+                                <input type="checkbox" name="toc_scroll_spy" value="1" <?php checked( $toc_scroll_spy, true ); ?> />
                                                 <span><?php esc_html_e( 'Scroll spy (highlight current section)', 'konderntang' ); ?></span>
-                                            </label>
+                            </label>
                                         </div>
                                         <p class="description">
                                             <?php esc_html_e( 'เปิดใช้งานตัวเลือกเพิ่มเติมสำหรับสารบัญ', 'konderntang' ); ?>
                                         </p>
                         </td>
                     </tr>
+                </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Social Media Settings -->
+                    <div class="konderntang-settings-section" id="section-social" data-section="social">
+                        <div class="konderntang-section-header">
+                            <div class="section-header-content">
+                                <span class="dashicons dashicons-share"></span>
+                                <div>
+                                    <h2><?php esc_html_e( 'Social Media Settings', 'konderntang' ); ?></h2>
+                                    <p><?php esc_html_e( 'Configure social media profiles and display options', 'konderntang' ); ?></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="konderntang-section-content">
+                            <div class="konderntang-info-box">
+                                <span class="dashicons dashicons-info"></span>
+                                <p><?php esc_html_e( 'กรอก URL โปรไฟล์โซเชียลมีเดียของคุณ ข้อมูลเหล่านี้จะถูกนำไปใช้แสดงผลใน Header, Footer และ Widget โดยอัตโนมัติ', 'konderntang' ); ?></p>
+                            </div>
+                            <table class="form-table">
+                                <!-- Social Profiles Section -->
+                                <tr>
+                                    <th colspan="2">
+                                        <h3 style="margin: 0; padding: 15px 0 5px; border-bottom: 1px solid #e2e8f0;">
+                                            <span class="dashicons dashicons-admin-links" style="margin-right: 8px;"></span>
+                                            <?php esc_html_e( 'Social Media Profiles', 'konderntang' ); ?>
+                                        </h3>
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="social_facebook">
+                                            <span class="dashicons dashicons-facebook" style="color: #1877f2;"></span>
+                                            <?php esc_html_e( 'Facebook', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input type="url" id="social_facebook" name="social_facebook" value="<?php echo esc_attr( $social_facebook ); ?>" class="regular-text" placeholder="https://facebook.com/yourpage" />
+                                        <p class="description"><?php esc_html_e( 'URL หน้า Facebook Page หรือ Profile', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="social_twitter">
+                                            <span class="dashicons dashicons-twitter" style="color: #000000;"></span>
+                                            <?php esc_html_e( 'X (Twitter)', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input type="url" id="social_twitter" name="social_twitter" value="<?php echo esc_attr( $social_twitter ); ?>" class="regular-text" placeholder="https://x.com/yourusername" />
+                                        <p class="description"><?php esc_html_e( 'URL โปรไฟล์ X (Twitter)', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="social_instagram">
+                                            <span class="dashicons dashicons-instagram" style="color: #e4405f;"></span>
+                                            <?php esc_html_e( 'Instagram', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input type="url" id="social_instagram" name="social_instagram" value="<?php echo esc_attr( $social_instagram ); ?>" class="regular-text" placeholder="https://instagram.com/yourusername" />
+                                        <p class="description"><?php esc_html_e( 'URL โปรไฟล์ Instagram', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="social_youtube">
+                                            <span class="dashicons dashicons-youtube" style="color: #ff0000;"></span>
+                                            <?php esc_html_e( 'YouTube', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input type="url" id="social_youtube" name="social_youtube" value="<?php echo esc_attr( $social_youtube ); ?>" class="regular-text" placeholder="https://youtube.com/@yourchannel" />
+                                        <p class="description"><?php esc_html_e( 'URL ช่อง YouTube', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="social_tiktok">
+                                            <span class="dashicons dashicons-video-alt3" style="color: #000000;"></span>
+                                            <?php esc_html_e( 'TikTok', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input type="url" id="social_tiktok" name="social_tiktok" value="<?php echo esc_attr( $social_tiktok ); ?>" class="regular-text" placeholder="https://tiktok.com/@yourusername" />
+                                        <p class="description"><?php esc_html_e( 'URL โปรไฟล์ TikTok', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="social_line">
+                                            <span class="dashicons dashicons-format-chat" style="color: #00b900;"></span>
+                                            <?php esc_html_e( 'LINE Official Account', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input type="url" id="social_line" name="social_line" value="<?php echo esc_attr( $social_line ); ?>" class="regular-text" placeholder="https://line.me/R/ti/p/@yourlineid" />
+                                        <p class="description"><?php esc_html_e( 'URL LINE Official Account หรือ LINE Add Friend Link', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="social_pinterest">
+                                            <span class="dashicons dashicons-pinterest" style="color: #bd081c;"></span>
+                                            <?php esc_html_e( 'Pinterest', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input type="url" id="social_pinterest" name="social_pinterest" value="<?php echo esc_attr( $social_pinterest ); ?>" class="regular-text" placeholder="https://pinterest.com/yourusername" />
+                                        <p class="description"><?php esc_html_e( 'URL โปรไฟล์ Pinterest', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="social_linkedin">
+                                            <span class="dashicons dashicons-linkedin" style="color: #0a66c2;"></span>
+                                            <?php esc_html_e( 'LinkedIn', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input type="url" id="social_linkedin" name="social_linkedin" value="<?php echo esc_attr( $social_linkedin ); ?>" class="regular-text" placeholder="https://linkedin.com/company/yourcompany" />
+                                        <p class="description"><?php esc_html_e( 'URL หน้า LinkedIn Company หรือ Profile', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Display Options Section -->
+                                <tr>
+                                    <th colspan="2">
+                                        <h3 style="margin: 20px 0 0; padding: 15px 0 5px; border-bottom: 1px solid #e2e8f0;">
+                                            <span class="dashicons dashicons-visibility" style="margin-right: 8px;"></span>
+                                            <?php esc_html_e( 'Display Options', 'konderntang' ); ?>
+                                        </h3>
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <span class="dashicons dashicons-admin-appearance"></span>
+                                        <?php esc_html_e( 'Show in Header', 'konderntang' ); ?>
+                                    </th>
+                                    <td>
+                                        <label class="konderntang-toggle">
+                                            <input type="checkbox" name="social_show_header" value="1" <?php checked( $social_show_header, true ); ?> />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'แสดงไอคอนโซเชียลมีเดียในส่วน Header', 'konderntang' ); ?></span>
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <span class="dashicons dashicons-arrow-down-alt"></span>
+                                        <?php esc_html_e( 'Show in Footer', 'konderntang' ); ?>
+                                    </th>
+                                    <td>
+                                        <label class="konderntang-toggle">
+                                            <input type="checkbox" name="social_show_footer" value="1" <?php checked( $social_show_footer, true ); ?> />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'แสดงไอคอนโซเชียลมีเดียในส่วน Footer', 'konderntang' ); ?></span>
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="social_icon_style">
+                                            <span class="dashicons dashicons-art"></span>
+                                            <?php esc_html_e( 'Icon Style', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <select name="social_icon_style" id="social_icon_style">
+                                            <option value="default" <?php selected( $social_icon_style, 'default' ); ?>><?php esc_html_e( 'Default (Flat)', 'konderntang' ); ?></option>
+                                            <option value="rounded" <?php selected( $social_icon_style, 'rounded' ); ?>><?php esc_html_e( 'Rounded', 'konderntang' ); ?></option>
+                                            <option value="square" <?php selected( $social_icon_style, 'square' ); ?>><?php esc_html_e( 'Square', 'konderntang' ); ?></option>
+                                            <option value="outline" <?php selected( $social_icon_style, 'outline' ); ?>><?php esc_html_e( 'Outline', 'konderntang' ); ?></option>
+                                        </select>
+                                        <p class="description"><?php esc_html_e( 'เลือกรูปแบบการแสดงผลไอคอน', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="social_icon_size">
+                                            <span class="dashicons dashicons-editor-expand"></span>
+                                            <?php esc_html_e( 'Icon Size', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <select name="social_icon_size" id="social_icon_size">
+                                            <option value="small" <?php selected( $social_icon_size, 'small' ); ?>><?php esc_html_e( 'Small (20px)', 'konderntang' ); ?></option>
+                                            <option value="medium" <?php selected( $social_icon_size, 'medium' ); ?>><?php esc_html_e( 'Medium (24px)', 'konderntang' ); ?></option>
+                                            <option value="large" <?php selected( $social_icon_size, 'large' ); ?>><?php esc_html_e( 'Large (32px)', 'konderntang' ); ?></option>
+                                        </select>
+                                        <p class="description"><?php esc_html_e( 'เลือกขนาดไอคอน', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <span class="dashicons dashicons-external"></span>
+                                        <?php esc_html_e( 'Open in New Tab', 'konderntang' ); ?>
+                                    </th>
+                                    <td>
+                                        <label class="konderntang-toggle">
+                                            <input type="checkbox" name="social_open_new_tab" value="1" <?php checked( $social_open_new_tab, true ); ?> />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'เปิดลิงก์โซเชียลมีเดียในแท็บใหม่', 'konderntang' ); ?></span>
+                                        </label>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Social Sharing Section -->
+                                <tr>
+                                    <th colspan="2">
+                                        <h3 style="margin: 20px 0 0; padding: 15px 0 5px; border-bottom: 1px solid #e2e8f0;">
+                                            <span class="dashicons dashicons-share-alt" style="margin-right: 8px;"></span>
+                                            <?php esc_html_e( 'Social Sharing (Share Buttons)', 'konderntang' ); ?>
+                                        </h3>
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <span class="dashicons dashicons-share"></span>
+                                        <?php esc_html_e( 'Enable Share Buttons', 'konderntang' ); ?>
+                                    </th>
+                                    <td>
+                                        <label class="konderntang-toggle">
+                                            <input type="checkbox" name="share_enabled" value="1" <?php checked( $share_enabled, true ); ?> />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'แสดงปุ่มแชร์ในหน้าบทความ', 'konderntang' ); ?></span>
+                                        </label>
+                                        <p class="description"><?php esc_html_e( 'เปิดใช้งานปุ่มแชร์บทความไปยังโซเชียลมีเดีย', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="share_position">
+                                            <span class="dashicons dashicons-editor-alignleft"></span>
+                                            <?php esc_html_e( 'Share Buttons Position', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <select name="share_position" id="share_position">
+                                            <option value="top" <?php selected( $share_position, 'top' ); ?>><?php esc_html_e( 'Above Content (ด้านบนเนื้อหา)', 'konderntang' ); ?></option>
+                                            <option value="bottom" <?php selected( $share_position, 'bottom' ); ?>><?php esc_html_e( 'Below Content (ด้านล่างเนื้อหา)', 'konderntang' ); ?></option>
+                                            <option value="both" <?php selected( $share_position, 'both' ); ?>><?php esc_html_e( 'Both (ทั้งด้านบนและด้านล่าง)', 'konderntang' ); ?></option>
+                                            <option value="floating" <?php selected( $share_position, 'floating' ); ?>><?php esc_html_e( 'Floating Sidebar (แถบลอยด้านข้าง)', 'konderntang' ); ?></option>
+                                        </select>
+                                        <p class="description"><?php esc_html_e( 'เลือกตำแหน่งแสดงปุ่มแชร์', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="share_style">
+                                            <span class="dashicons dashicons-art"></span>
+                                            <?php esc_html_e( 'Share Button Style', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <select name="share_style" id="share_style">
+                                            <option value="icon" <?php selected( $share_style, 'icon' ); ?>><?php esc_html_e( 'Icon Only (ไอคอนอย่างเดียว)', 'konderntang' ); ?></option>
+                                            <option value="icon-text" <?php selected( $share_style, 'icon-text' ); ?>><?php esc_html_e( 'Icon with Text (ไอคอนพร้อมข้อความ)', 'konderntang' ); ?></option>
+                                            <option value="button" <?php selected( $share_style, 'button' ); ?>><?php esc_html_e( 'Full Button (ปุ่มเต็ม)', 'konderntang' ); ?></option>
+                                        </select>
+                                        <p class="description"><?php esc_html_e( 'เลือกรูปแบบปุ่มแชร์', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <span class="dashicons dashicons-admin-generic"></span>
+                                        <?php esc_html_e( 'Share Platforms', 'konderntang' ); ?>
+                                    </th>
+                                    <td>
+                                        <fieldset>
+                                            <label style="display: block; margin-bottom: 8px;">
+                                                <input type="checkbox" name="share_platforms[]" value="facebook" <?php checked( in_array( 'facebook', $share_platforms, true ) ); ?> />
+                                                <span class="dashicons dashicons-facebook" style="color: #1877f2;"></span>
+                                                <?php esc_html_e( 'Facebook', 'konderntang' ); ?>
+                                            </label>
+                                            <label style="display: block; margin-bottom: 8px;">
+                                                <input type="checkbox" name="share_platforms[]" value="twitter" <?php checked( in_array( 'twitter', $share_platforms, true ) ); ?> />
+                                                <span class="dashicons dashicons-twitter" style="color: #000000;"></span>
+                                                <?php esc_html_e( 'X (Twitter)', 'konderntang' ); ?>
+                                            </label>
+                                            <label style="display: block; margin-bottom: 8px;">
+                                                <input type="checkbox" name="share_platforms[]" value="line" <?php checked( in_array( 'line', $share_platforms, true ) ); ?> />
+                                                <span class="dashicons dashicons-format-chat" style="color: #00b900;"></span>
+                                                <?php esc_html_e( 'LINE', 'konderntang' ); ?>
+                                            </label>
+                                            <label style="display: block; margin-bottom: 8px;">
+                                                <input type="checkbox" name="share_platforms[]" value="email" <?php checked( in_array( 'email', $share_platforms, true ) ); ?> />
+                                                <span class="dashicons dashicons-email" style="color: #666666;"></span>
+                                                <?php esc_html_e( 'Email', 'konderntang' ); ?>
+                                            </label>
+                                            <label style="display: block; margin-bottom: 8px;">
+                                                <input type="checkbox" name="share_platforms[]" value="copy" <?php checked( in_array( 'copy', $share_platforms, true ) ); ?> />
+                                                <span class="dashicons dashicons-admin-links" style="color: #666666;"></span>
+                                                <?php esc_html_e( 'Copy Link', 'konderntang' ); ?>
+                                            </label>
+                                            <label style="display: block; margin-bottom: 8px;">
+                                                <input type="checkbox" name="share_platforms[]" value="pinterest" <?php checked( in_array( 'pinterest', $share_platforms, true ) ); ?> />
+                                                <span class="dashicons dashicons-pinterest" style="color: #bd081c;"></span>
+                                                <?php esc_html_e( 'Pinterest', 'konderntang' ); ?>
+                                            </label>
+                                            <label style="display: block; margin-bottom: 8px;">
+                                                <input type="checkbox" name="share_platforms[]" value="linkedin" <?php checked( in_array( 'linkedin', $share_platforms, true ) ); ?> />
+                                                <span class="dashicons dashicons-linkedin" style="color: #0a66c2;"></span>
+                                                <?php esc_html_e( 'LinkedIn', 'konderntang' ); ?>
+                                            </label>
+                                            <label style="display: block; margin-bottom: 8px;">
+                                                <input type="checkbox" name="share_platforms[]" value="whatsapp" <?php checked( in_array( 'whatsapp', $share_platforms, true ) ); ?> />
+                                                <span class="dashicons dashicons-whatsapp" style="color: #25d366;"></span>
+                                                <?php esc_html_e( 'WhatsApp', 'konderntang' ); ?>
+                                            </label>
+                                        </fieldset>
+                                        <p class="description"><?php esc_html_e( 'เลือกแพลตฟอร์มที่ต้องการให้แสดงปุ่มแชร์', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <span class="dashicons dashicons-visibility"></span>
+                                        <?php esc_html_e( 'Show Share Count', 'konderntang' ); ?>
+                                    </th>
+                                    <td>
+                                        <label class="konderntang-toggle">
+                                            <input type="checkbox" name="share_show_count" value="1" <?php checked( $share_show_count, true ); ?> />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'แสดงจำนวนการแชร์ (ถ้ามี)', 'konderntang' ); ?></span>
+                                        </label>
+                                        <p class="description"><?php esc_html_e( 'แสดงจำนวนครั้งที่บทความถูกแชร์ (บางแพลตฟอร์มอาจไม่รองรับ)', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="share_label">
+                                            <span class="dashicons dashicons-editor-textcolor"></span>
+                                            <?php esc_html_e( 'Share Label', 'konderntang' ); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input type="text" id="share_label" name="share_label" value="<?php echo esc_attr( $share_label ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'แชร์บทความนี้', 'konderntang' ); ?>" />
+                                        <p class="description"><?php esc_html_e( 'ข้อความที่แสดงก่อนปุ่มแชร์ (เว้นว่างไว้หากไม่ต้องการแสดง)', 'konderntang' ); ?></p>
+                                    </td>
+                                </tr>
                             </table>
                         </div>
                     </div>
@@ -1561,23 +2106,26 @@ function konderntang_settings_page_render() {
                             </div>
                         </div>
                         <div class="konderntang-section-content">
-                            <table class="form-table">
+                <table class="form-table">
+                    <!-- Enable Cookie Consent -->
                     <tr>
                         <th scope="row">
                                         <span class="dashicons dashicons-privacy"></span>
-                                        <?php esc_html_e( 'Cookie Consent', 'konderntang' ); ?>
+                            <?php esc_html_e( 'Cookie Consent', 'konderntang' ); ?>
                         </th>
                         <td>
                                         <label class="konderntang-toggle">
-                                            <input type="checkbox" name="cookie_consent_enabled" value="1" <?php checked( $cookie_consent_enabled, true ); ?> />
+                                <input type="checkbox" name="cookie_consent_enabled" value="1" <?php checked( $cookie_consent_enabled, true ); ?> />
                                             <span class="toggle-slider"></span>
                                             <span class="toggle-label"><?php esc_html_e( 'Enable cookie consent banner', 'konderntang' ); ?></span>
-                                        </label>
+                            </label>
                                         <p class="description">
                                             <?php esc_html_e( 'แสดง Cookie Consent Banner เพื่อให้สอดคล้องกับ GDPR', 'konderntang' ); ?>
                                         </p>
                         </td>
                     </tr>
+                    
+                    <!-- Cookie Message -->
                     <tr>
                         <th scope="row">
                                         <label for="cookie_consent_message">
@@ -1592,7 +2140,355 @@ function konderntang_settings_page_render() {
                                         </p>
                         </td>
                     </tr>
-                            </table>
+                    
+                    <!-- Privacy Policy Page -->
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_privacy_page">
+                                            <span class="dashicons dashicons-media-document"></span>
+                                            <?php esc_html_e( 'Privacy Policy Page', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <?php
+                                        wp_dropdown_pages( array(
+                                            'name'              => 'cookie_consent_privacy_page',
+                                            'id'                => 'cookie_consent_privacy_page',
+                                            'selected'          => $cookie_consent_privacy_page,
+                                            'show_option_none'  => esc_html__( '— Select —', 'konderntang' ),
+                                            'option_none_value' => 0,
+                                            'class'             => 'regular-text',
+                                        ) );
+                                        ?>
+                                        <p class="description">
+                                            <?php esc_html_e( 'หน้านโยบายความเป็นส่วนตัวที่จะลิงก์จาก Cookie Banner', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Position -->
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_position">
+                                            <span class="dashicons dashicons-move"></span>
+                                            <?php esc_html_e( 'Banner Position', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <select name="cookie_consent_position" id="cookie_consent_position" class="regular-text">
+                                <option value="bottom" <?php selected( $cookie_consent_position, 'bottom' ); ?>><?php esc_html_e( 'Bottom', 'konderntang' ); ?></option>
+                                <option value="top" <?php selected( $cookie_consent_position, 'top' ); ?>><?php esc_html_e( 'Top', 'konderntang' ); ?></option>
+                            </select>
+                                        <p class="description">
+                                            <?php esc_html_e( 'ตำแหน่งการแสดง Banner', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Style -->
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_style">
+                                            <span class="dashicons dashicons-art"></span>
+                                            <?php esc_html_e( 'Banner Style', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <select name="cookie_consent_style" id="cookie_consent_style" class="regular-text">
+                                <option value="bar" <?php selected( $cookie_consent_style, 'bar' ); ?>><?php esc_html_e( 'Bar (แบบแถบ)', 'konderntang' ); ?></option>
+                                <option value="box" <?php selected( $cookie_consent_style, 'box' ); ?>><?php esc_html_e( 'Box (แบบกล่อง)', 'konderntang' ); ?></option>
+                            </select>
+                                        <p class="description">
+                                            <?php esc_html_e( 'รูปแบบการแสดงผล Banner', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Background Color -->
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_bg_color">
+                                            <span class="dashicons dashicons-art"></span>
+                                            <?php esc_html_e( 'Background Color', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <input type="text" name="cookie_consent_bg_color" id="cookie_consent_bg_color" value="<?php echo esc_attr( $cookie_consent_bg_color ); ?>" class="konderntang-color-picker" data-default-color="#ffffff" />
+                                        <p class="description">
+                                            <?php esc_html_e( 'สีพื้นหลังของ Banner', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Text Color -->
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_text_color">
+                                            <span class="dashicons dashicons-editor-textcolor"></span>
+                                            <?php esc_html_e( 'Text Color', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <input type="text" name="cookie_consent_text_color" id="cookie_consent_text_color" value="<?php echo esc_attr( $cookie_consent_text_color ); ?>" class="konderntang-color-picker" data-default-color="#374151" />
+                                        <p class="description">
+                                            <?php esc_html_e( 'สีข้อความ', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Button Background Color -->
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_button_bg">
+                                            <span class="dashicons dashicons-art"></span>
+                                            <?php esc_html_e( 'Button Background Color', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <input type="text" name="cookie_consent_button_bg" id="cookie_consent_button_bg" value="<?php echo esc_attr( $cookie_consent_button_bg ); ?>" class="konderntang-color-picker" data-default-color="#3b82f6" />
+                                        <p class="description">
+                                            <?php esc_html_e( 'สีพื้นหลังของปุ่ม', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Button Text Color -->
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_button_text">
+                                            <span class="dashicons dashicons-editor-textcolor"></span>
+                                            <?php esc_html_e( 'Button Text Color', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <input type="text" name="cookie_consent_button_text" id="cookie_consent_button_text" value="<?php echo esc_attr( $cookie_consent_button_text ); ?>" class="konderntang-color-picker" data-default-color="#ffffff" />
+                                        <p class="description">
+                                            <?php esc_html_e( 'สีข้อความบนปุ่ม', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Button Texts -->
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_accept_text">
+                                            <span class="dashicons dashicons-yes"></span>
+                                            <?php esc_html_e( 'Accept Button Text', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <input type="text" name="cookie_consent_accept_text" id="cookie_consent_accept_text" value="<?php echo esc_attr( $cookie_consent_accept_text ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'ยอมรับทั้งหมด', 'konderntang' ); ?>" />
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_decline_text">
+                                            <span class="dashicons dashicons-no"></span>
+                                            <?php esc_html_e( 'Decline Button Text', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <input type="text" name="cookie_consent_decline_text" id="cookie_consent_decline_text" value="<?php echo esc_attr( $cookie_consent_decline_text ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'ปฏิเสธทั้งหมด', 'konderntang' ); ?>" />
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_settings_text">
+                                            <span class="dashicons dashicons-admin-settings"></span>
+                                            <?php esc_html_e( 'Settings Button Text', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <input type="text" name="cookie_consent_settings_text" id="cookie_consent_settings_text" value="<?php echo esc_attr( $cookie_consent_settings_text ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'ตั้งค่า', 'konderntang' ); ?>" />
+                        </td>
+                    </tr>
+                    
+                    <!-- Show Decline Button -->
+                    <tr>
+                        <th scope="row">
+                                        <span class="dashicons dashicons-no"></span>
+                            <?php esc_html_e( 'Show Decline Button', 'konderntang' ); ?>
+                        </th>
+                        <td>
+                                        <label class="konderntang-toggle">
+                                <input type="checkbox" name="cookie_consent_show_decline" value="1" <?php checked( $cookie_consent_show_decline, true ); ?> />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'Show decline button in banner', 'konderntang' ); ?></span>
+                            </label>
+                                        <p class="description">
+                                            <?php esc_html_e( 'แสดงปุ่มปฏิเสธใน Banner (บางประเทศ GDPR กำหนดให้ต้องมี)', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Auto Hide -->
+                    <tr>
+                        <th scope="row">
+                                        <span class="dashicons dashicons-hidden"></span>
+                            <?php esc_html_e( 'Auto Hide Banner', 'konderntang' ); ?>
+                        </th>
+                        <td>
+                                        <label class="konderntang-toggle">
+                                <input type="checkbox" name="cookie_consent_auto_hide" value="1" <?php checked( $cookie_consent_auto_hide, true ); ?> />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'Auto-hide banner after delay', 'konderntang' ); ?></span>
+                            </label>
+                                        <p class="description">
+                                            <?php esc_html_e( 'ซ่อน Banner อัตโนมัติหลังจากเวลาที่กำหนด (ไม่แนะนำสำหรับ GDPR compliance)', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_auto_hide_delay">
+                                            <span class="dashicons dashicons-clock"></span>
+                                            <?php esc_html_e( 'Auto Hide Delay (seconds)', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <input type="number" name="cookie_consent_auto_hide_delay" id="cookie_consent_auto_hide_delay" value="<?php echo esc_attr( $cookie_consent_auto_hide_delay ); ?>" min="5" max="60" step="1" class="small-text" />
+                                        <p class="description">
+                                            <?php esc_html_e( 'เวลาก่อนซ่อน Banner อัตโนมัติ (5-60 วินาที)', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Cookie Categories Header -->
+                    <tr>
+                        <th scope="row" colspan="2">
+                            <h3 class="konderntang-section-title">
+                                <span class="dashicons dashicons-category"></span>
+                                <?php esc_html_e( 'Cookie Categories', 'konderntang' ); ?>
+                            </h3>
+                            <p class="description">
+                                <?php esc_html_e( 'กำหนดประเภทคุกกี้ที่จะให้ผู้ใช้เลือกได้ในหน้าตั้งค่า', 'konderntang' ); ?>
+                            </p>
+                        </th>
+                    </tr>
+                    
+                    <!-- Necessary Cookies -->
+                    <tr>
+                        <th scope="row">
+                                        <span class="dashicons dashicons-shield-alt"></span>
+                            <?php esc_html_e( 'Necessary Cookies', 'konderntang' ); ?>
+                        </th>
+                        <td>
+                                        <label class="konderntang-toggle">
+                                <input type="checkbox" name="cookie_consent_necessary" value="1" <?php checked( $cookie_consent_necessary, true ); ?> disabled />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'Always enabled (required)', 'konderntang' ); ?></span>
+                            </label>
+                                        <p class="description">
+                                            <?php esc_html_e( 'คุกกี้ที่จำเป็นไม่สามารถปิดได้', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_necessary_desc">
+                                            <span class="dashicons dashicons-editor-alignleft"></span>
+                                            <?php esc_html_e( 'Description', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <textarea name="cookie_consent_necessary_desc" id="cookie_consent_necessary_desc" rows="2" class="large-text"><?php echo esc_textarea( $cookie_consent_necessary_desc ); ?></textarea>
+                        </td>
+                    </tr>
+                    
+                    <!-- Analytics Cookies -->
+                    <tr>
+                        <th scope="row">
+                                        <span class="dashicons dashicons-chart-line"></span>
+                            <?php esc_html_e( 'Analytics Cookies', 'konderntang' ); ?>
+                        </th>
+                        <td>
+                                        <label class="konderntang-toggle">
+                                <input type="checkbox" name="cookie_consent_analytics" value="1" <?php checked( $cookie_consent_analytics, true ); ?> />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'Enable analytics category', 'konderntang' ); ?></span>
+                            </label>
+                                        <p class="description">
+                                            <?php esc_html_e( 'แสดงตัวเลือกคุกกี้วิเคราะห์การใช้งาน (Google Analytics, etc.)', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_analytics_desc">
+                                            <span class="dashicons dashicons-editor-alignleft"></span>
+                                            <?php esc_html_e( 'Description', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <textarea name="cookie_consent_analytics_desc" id="cookie_consent_analytics_desc" rows="2" class="large-text"><?php echo esc_textarea( $cookie_consent_analytics_desc ); ?></textarea>
+                        </td>
+                    </tr>
+                    
+                    <!-- Marketing Cookies -->
+                    <tr>
+                        <th scope="row">
+                                        <span class="dashicons dashicons-megaphone"></span>
+                            <?php esc_html_e( 'Marketing Cookies', 'konderntang' ); ?>
+                        </th>
+                        <td>
+                                        <label class="konderntang-toggle">
+                                <input type="checkbox" name="cookie_consent_marketing" value="1" <?php checked( $cookie_consent_marketing, true ); ?> />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'Enable marketing category', 'konderntang' ); ?></span>
+                            </label>
+                                        <p class="description">
+                                            <?php esc_html_e( 'แสดงตัวเลือกคุกกี้การตลาด (Facebook Pixel, Google Ads, etc.)', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_marketing_desc">
+                                            <span class="dashicons dashicons-editor-alignleft"></span>
+                                            <?php esc_html_e( 'Description', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <textarea name="cookie_consent_marketing_desc" id="cookie_consent_marketing_desc" rows="2" class="large-text"><?php echo esc_textarea( $cookie_consent_marketing_desc ); ?></textarea>
+                        </td>
+                    </tr>
+                    
+                    <!-- Functional Cookies -->
+                    <tr>
+                        <th scope="row">
+                                        <span class="dashicons dashicons-admin-tools"></span>
+                            <?php esc_html_e( 'Functional Cookies', 'konderntang' ); ?>
+                        </th>
+                        <td>
+                                        <label class="konderntang-toggle">
+                                <input type="checkbox" name="cookie_consent_functional" value="1" <?php checked( $cookie_consent_functional, true ); ?> />
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><?php esc_html_e( 'Enable functional category', 'konderntang' ); ?></span>
+                            </label>
+                                        <p class="description">
+                                            <?php esc_html_e( 'แสดงตัวเลือกคุกกี้เสริมฟังก์ชัน (Social Share, Live Chat, etc.)', 'konderntang' ); ?>
+                                        </p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                                        <label for="cookie_consent_functional_desc">
+                                            <span class="dashicons dashicons-editor-alignleft"></span>
+                                            <?php esc_html_e( 'Description', 'konderntang' ); ?>
+                                        </label>
+                        </th>
+                        <td>
+                                        <textarea name="cookie_consent_functional_desc" id="cookie_consent_functional_desc" rows="2" class="large-text"><?php echo esc_textarea( $cookie_consent_functional_desc ); ?></textarea>
+                        </td>
+                    </tr>
+                </table>
                         </div>
                     </div>
                     
@@ -1670,8 +2566,8 @@ function konderntang_settings_page_render() {
                     </tr>
                 </table>
                         </div>
-                    </div>
-                    
+    </div>
+    
                     <!-- Save Button -->
                     <div class="konderntang-settings-footer">
                         <button type="submit" name="konderntang_save_settings" class="button button-primary button-large konderntang-save-btn">

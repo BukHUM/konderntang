@@ -40,6 +40,11 @@ require_once KONDERN_THEME_DIR . '/inc/performance.php';
 require_once KONDERN_THEME_DIR . '/inc/seo.php';
 require_once KONDERN_THEME_DIR . '/inc/security.php';
 
+// Seeder (Admin only)
+if ( is_admin() ) {
+    require_once KONDERN_THEME_DIR . '/inc/seeder/admin-seeder.php';
+}
+
 // Load widgets (must be loaded before register-widgets.php)
 require_once KONDERN_THEME_DIR . '/widgets/class-recent-posts-widget.php';
 require_once KONDERN_THEME_DIR . '/widgets/class-popular-posts-widget.php';

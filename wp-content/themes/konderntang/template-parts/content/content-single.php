@@ -5,6 +5,9 @@
  * @package KonDernTang
  * @since 1.0.0
  */
+
+// Load social share component
+require_once KONDERN_THEME_DIR . '/template-parts/components/social-share.php';
 ?>
 
 <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
@@ -36,6 +39,11 @@
         </div>
     </header>
 
+    <?php
+    // Social Share Buttons - Top Position
+    konderntang_render_share_buttons( 'top' );
+    ?>
+
     <div class="entry-content">
         <?php
         the_content();
@@ -48,6 +56,11 @@
         );
         ?>
     </div>
+
+    <?php
+    // Social Share Buttons - Bottom Position
+    konderntang_render_share_buttons( 'bottom' );
+    ?>
 
     <footer class="entry-footer">
         <?php
@@ -65,6 +78,9 @@
 </article>
 
 <?php
+// Social Share Buttons - Floating Position
+konderntang_render_floating_share();
+
 // Comments
 if ( comments_open() || get_comments_number() ) {
     comments_template();
