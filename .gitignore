@@ -10,13 +10,15 @@
 /wp-content/plugins/*
 !/wp-content/plugins/image-optimization/
 !/wp-content/themes/
-/wp-content/themes/*
 !/wp-content/themes/konderntang/
+!/wp-content/themes/trendtoday/
+/wp-content/themes/*
 
 # Ignore common WordPress files
 /.htaccess
 /wp-config.php
 /wp-config-sample.php
+!wp-config.production.example.php
 /xmlrpc.php
 /license.txt
 /readme.html
@@ -44,5 +46,6 @@ Thumbs.db
 # Keep the structure but ignore other plugins/themes
 /wp-content/plugins/*/
 !/wp-content/plugins/image-optimization/
-/wp-content/themes/*/
 !/wp-content/themes/konderntang/
+!/wp-content/themes/trendtoday/
+/wp-content/themes/*/

@@ -1,0 +1,83 @@
+/**
+ * Print Styles for Trend Today Theme
+ * 
+ * @package TrendToday
+ * @since 1.0.0
+ */
+
+@media print {
+    /* Hide non-essential elements */
+    nav,
+    .navbar,
+    .sidebar,
+    .category-filters,
+    .trending-tags,
+    .footer,
+    #back-to-top,
+    .comments-area,
+    .social-share,
+    .newsletter,
+    .advertisement,
+    button,
+    .button {
+        display: none !important;
+    }
+
+    /* Optimize layout for print */
+    body {
+        font-size: 12pt;
+        line-height: 1.5;
+        color: #000;
+        background: #fff;
+    }
+
+    /* Page setup */
+    @page {
+        margin: 2cm;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid;
+        color: #000;
+    }
+
+    /* Links */
+    a {
+        color: #000;
+        text-decoration: underline;
+    }
+
+    a[href^="http"]:after {
+        content: " (" attr(href) ")";
+        font-size: 10pt;
+    }
+
+    /* Images */
+    img {
+        max-width: 100% !important;
+        height: auto !important;
+        page-break-inside: avoid;
+    }
+
+    /* Article content */
+    article {
+        page-break-inside: avoid;
+    }
+
+    /* Avoid breaking */
+    p, li {
+        orphans: 3;
+        widows: 3;
+    }
+
+    /* Page breaks */
+    .page-break {
+        page-break-before: always;
+    }
+
+    /* No page break */
+    .no-break {
+        page-break-inside: avoid;
+    }
+}

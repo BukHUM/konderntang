@@ -1,0 +1,237 @@
+/**
+ * Admin Styles for Trend Today Theme
+ * 
+ * @package TrendToday
+ * @since 1.0.0
+ */
+
+/* Gallery Images List */
+.gallery-images-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.gallery-image-item {
+    position: relative;
+    border: 1px solid #ddd;
+    padding: 5px;
+    background: #fff;
+    border-radius: 3px;
+}
+
+.gallery-image-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.gallery-image-item .remove-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #dc3232;
+}
+
+.gallery-image-item .remove-image:hover {
+    background: #dc3232;
+    color: #fff;
+}
+
+/* Related Posts List */
+.related-posts-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.related-post-item {
+    padding: 8px 12px;
+    background: #f5f5f5;
+    margin-bottom: 5px;
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.related-post-item strong {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.related-post-item .remove-related-post {
+    color: #dc3232;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.related-post-item .remove-related-post:hover {
+    text-decoration: underline;
+}
+
+/* Social Image Preview */
+.social-image-preview {
+    margin-bottom: 10px;
+}
+
+.social-image-preview img {
+    max-width: 200px;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 5px;
+    background: #fff;
+}
+
+/* Category Color Picker */
+.term-color-wrap .wp-picker-container {
+    margin-top: 5px;
+}
+
+/* Meta Box Styling */
+#trendtoday_post_options,
+#trendtoday_post_additional,
+#trendtoday_seo_options,
+#trendtoday_video_options,
+#trendtoday_gallery_options,
+#trendtoday_featured_options {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Form Table Styling */
+.form-table th {
+    font-weight: 600;
+    padding-left: 0;
+}
+
+.form-table td {
+    padding-left: 0;
+}
+
+/* Description Text */
+.description {
+    color: #646970;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+/* Button Styling */
+.button-secondary {
+    margin-right: 5px;
+}
+
+/* WordPress Admin Post List Table - Fix Title Column Width */
+/* Use more specific selectors to ensure styles are applied */
+#posts-filter .wp-list-table,
+#posts-filter .widefat {
+    table-layout: auto !important;
+}
+
+#posts-filter .wp-list-table th.column-title,
+#posts-filter .wp-list-table td.column-title,
+.wp-list-table th.column-title,
+.wp-list-table td.column-title {
+    width: 50% !important;
+    min-width: 400px !important;
+    max-width: none !important;
+}
+
+#posts-filter .wp-list-table th.column-author,
+#posts-filter .wp-list-table td.column-author,
+.wp-list-table th.column-author,
+.wp-list-table td.column-author {
+    width: 10% !important;
+}
+
+#posts-filter .wp-list-table th.column-categories,
+#posts-filter .wp-list-table td.column-categories,
+.wp-list-table th.column-categories,
+.wp-list-table td.column-categories {
+    width: 15% !important;
+}
+
+#posts-filter .wp-list-table th.column-tags,
+#posts-filter .wp-list-table td.column-tags,
+.wp-list-table th.column-tags,
+.wp-list-table td.column-tags {
+    width: 15% !important;
+}
+
+#posts-filter .wp-list-table th.column-date,
+#posts-filter .wp-list-table td.column-date,
+.wp-list-table th.column-date,
+.wp-list-table td.column-date {
+    width: 10% !important;
+}
+
+/* For custom post types */
+.wp-list-table.post-type-video_news th.column-title,
+.wp-list-table.post-type-video_news td.column-title,
+.wp-list-table.post-type-gallery th.column-title,
+.wp-list-table.post-type-gallery td.column-title,
+.wp-list-table.post-type-featured_story th.column-title,
+.wp-list-table.post-type-featured_story td.column-title {
+    width: 50% !important;
+    min-width: 400px !important;
+    max-width: none !important;
+}
+
+/* Ensure table doesn't force fixed layout */
+.wp-list-table {
+    table-layout: auto !important;
+    width: 100% !important;
+}
+
+/* Featured Image Column Styling */
+.wp-list-table .column-featured_image {
+    width: 80px !important;
+    text-align: center;
+}
+
+.wp-list-table td.column-featured_image {
+    padding: 8px !important;
+    vertical-align: middle;
+}
+
+.wp-list-table td.column-featured_image a {
+    display: inline-block;
+    text-decoration: none;
+}
+
+.wp-list-table td.column-featured_image img {
+    display: block;
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wp-list-table td.column-featured_image a:hover img {
+    transform: scale(1.05);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.wp-list-table td.column-featured_image span {
+    display: inline-block;
+    width: 60px;
+    height: 60px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    text-align: center;
+    line-height: 60px;
+    color: #999;
+    font-size: 11px;
+    border: 1px solid #ddd;
+}

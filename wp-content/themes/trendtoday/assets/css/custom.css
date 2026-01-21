@@ -1,0 +1,1418 @@
+/**
+ * Custom CSS for Trend Today Theme
+ * 
+ * @package TrendToday
+ * @since 1.0.0
+ */
+
+/* ============================================
+   Responsive Breakpoints
+   ============================================ */
+/* Mobile: < 640px (default) */
+/* Tablet: 640px - 1024px (md:) */
+/* Desktop: > 1024px (lg:) */
+/* Large Desktop: > 1280px (xl:) */
+
+/* Custom Scrollbar for Categories */
+.hide-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.hide-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Enhanced Article Card Hover */
+.article-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.article-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.article-card:hover .article-img {
+    transform: scale(1.08);
+}
+
+/* Smooth Image Loading */
+.article-img {
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Line Clamp Utilities */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Sticky Sidebar */
+@media (min-width: 1024px) {
+    .sticky-sidebar {
+        position: sticky;
+        top: 100px;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+        /* Hide scrollbar but keep scrolling functionality */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+    }
+    
+    .sticky-sidebar::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+}
+
+/* Smooth Scroll */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Focus States for Accessibility */
+a:focus-visible,
+button:focus-visible {
+    outline: 2px solid #FF4500;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Category Badge Animation */
+.category-badge {
+    transition: all 0.2s ease;
+}
+
+.category-badge:hover {
+    transform: scale(1.05);
+}
+
+/* Trending Tag Animation */
+.trending-tag {
+    transition: all 0.2s ease;
+}
+
+.trending-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Hero Section Overlay Gradient */
+.hero-overlay {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%);
+}
+
+/* Hero Slider Styles */
+.hero-slider-section {
+    position: relative;
+}
+
+.hero-slider-container {
+    position: relative;
+}
+
+.hero-slider-wrapper {
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.6s ease-in-out;
+    z-index: 1;
+}
+
+.hero-slide.active {
+    opacity: 1;
+    z-index: 2;
+}
+
+.hero-slider-prev,
+.hero-slider-next {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none;
+}
+
+.hero-slider-container:hover .hero-slider-prev,
+.hero-slider-container:hover .hero-slider-next {
+    opacity: 0.8;
+    pointer-events: auto;
+}
+
+.hero-slider-prev:hover,
+.hero-slider-next:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.hero-slider-indicator {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.hero-slider-indicator.active {
+    background-color: white !important;
+    width: 2rem;
+}
+
+@media (max-width: 640px) {
+    .hero-slider-prev,
+    .hero-slider-next {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .hero-slider-prev {
+        left: 0.5rem;
+    }
+    
+    .hero-slider-next {
+        right: 0.5rem;
+    }
+}
+
+/* Button Hover Effect */
+.btn-primary {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Mobile Menu Animation */
+#mobile-menu {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Popular Number Animation */
+.popular-number {
+    transition: all 0.3s ease;
+    display: block;
+    line-height: 1;
+}
+
+.popular-item:hover .popular-number {
+    transform: scale(1.1);
+}
+
+/* Popular Item */
+.popular-item {
+    min-width: 0; /* Prevent flex item from overflowing */
+}
+
+/* Ensure popular item content doesn't overflow */
+.popular-item > div:last-child {
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Newsletter Input Focus */
+.newsletter-input:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 69, 0, 0.2);
+}
+
+/* Footer Toggle Animation */
+.footer-links {
+    transition: all 0.3s ease-in-out;
+}
+
+.fa-chevron-down {
+    transition: transform 0.3s ease-in-out;
+}
+
+.fa-chevron-down.rotate-180 {
+    transform: rotate(180deg);
+}
+
+/* ============================================
+   Enhanced Footer Styles
+   ============================================ */
+
+/* Footer Link Styles */
+.footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    position: relative;
+    transition: all 0.2s ease-in-out;
+}
+
+.footer-link:hover {
+    transform: translateX(4px);
+}
+
+.footer-link:hover i.fa-chevron-right {
+    color: var(--accent-color, #FF4500);
+    transform: translateX(2px);
+}
+
+.footer-link-item {
+    transition: all 0.2s ease-in-out;
+}
+
+.footer-link-item:hover {
+    transform: translateX(2px);
+}
+
+/* Footer Social Icons */
+.footer-social-icon {
+    position: relative;
+    overflow: hidden;
+}
+
+.footer-social-icon::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+.footer-social-icon:hover::before {
+    width: 100%;
+    height: 100%;
+}
+
+/* Trending Tags in Footer */
+.trending-tag {
+    position: relative;
+    overflow: hidden;
+}
+
+.trending-tag::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.trending-tag:hover::before {
+    left: 100%;
+}
+
+/* Footer Newsletter Input */
+#footer-newsletter-email:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 69, 0, 0.15);
+}
+
+/* Footer Newsletter Section */
+footer .newsletter-input {
+    transition: all 0.3s ease;
+}
+
+footer .newsletter-input:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 69, 0, 0.2);
+}
+
+footer form button[type="submit"] {
+    position: relative;
+    overflow: hidden;
+}
+
+footer form button[type="submit"]::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+}
+
+footer form button[type="submit"]:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Newsletter Section Responsive */
+@media (max-width: 768px) {
+    footer .newsletter-section {
+        padding: 1.5rem;
+    }
+    
+    footer .newsletter-section .flex {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    footer .newsletter-section form {
+        width: 100%;
+    }
+    
+    footer .newsletter-section form button {
+        width: 100%;
+    }
+}
+
+/* Footer Responsive Improvements */
+@media (max-width: 768px) {
+    .footer-links {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+    
+    .footer-link {
+        padding: 0.5rem 0;
+    }
+    
+    .trending-tag {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+}
+
+/* Footer Accessibility - Focus States */
+.footer-link:focus,
+.footer-social-icon:focus,
+.trending-tag:focus {
+    outline: 2px solid var(--accent-color, #FF4500);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+
+/* Smooth Scroll for Footer Accordion */
+.footer-links[aria-hidden="true"] {
+    display: none;
+}
+
+.footer-links[aria-hidden="false"] {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   Single Post Content Styling
+   ============================================ */
+
+/* Prose Content Styling (for article body) */
+.prose {
+    color: #374151;
+    line-height: 1.75;
+    font-size: 1.125rem;
+}
+
+.prose p {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    line-height: 1.75;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+    margin-top: 1.5em;
+    margin-bottom: 1em;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #111827;
+}
+
+.prose h1 {
+    font-size: 2.25rem;
+}
+
+.prose h2 {
+    font-size: 1.875rem;
+}
+
+.prose h3 {
+    font-size: 1.5rem;
+}
+
+.prose h4 {
+    font-size: 1.25rem;
+}
+
+.prose a {
+    color: #FF4500;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.prose a:hover {
+    color: #dc3a00;
+}
+
+.prose strong {
+    font-weight: 600;
+    color: #111827;
+}
+
+.prose ul {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    padding-left: 1.625em;
+    list-style-type: disc;
+    list-style-position: outside;
+}
+
+.prose ol {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    padding-left: 1.625em;
+    list-style-type: decimal;
+    list-style-position: outside;
+}
+
+.prose li {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    display: list-item;
+    padding-left: 0.375em;
+}
+
+/* Nested lists */
+.prose ul ul {
+    list-style-type: circle;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.prose ul ul ul {
+    list-style-type: square;
+}
+
+.prose ol ol {
+    list-style-type: lower-alpha;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.prose ol ol ol {
+    list-style-type: lower-roman;
+}
+
+.prose blockquote {
+    border-left: 4px solid #FF4500;
+    padding-left: 1em;
+    font-style: italic;
+    color: #6B7280;
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+}
+
+.prose img {
+    border-radius: 0.5rem;
+    margin-top: 2em;
+    margin-bottom: 2em;
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+}
+
+.prose figure {
+    margin-top: 2em;
+    margin-bottom: 2em;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.prose figure img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0;
+}
+
+.prose iframe,
+.prose video,
+.prose embed,
+.prose object {
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-top: 2em;
+    margin-bottom: 2em;
+}
+
+/* Ensure all content elements don't overflow */
+.prose * {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.prose table {
+    max-width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
+.prose pre {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+/* Content wrapper overflow protection */
+.prose {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    overflow-x: hidden;
+}
+
+.prose code {
+    background-color: #F3F4F6;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-family: 'Courier New', monospace;
+}
+
+.prose pre {
+    background-color: #111827;
+    color: #F9FAFB;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow: auto;
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+}
+
+.prose pre code {
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+.prose table {
+    width: 100%;
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+    border-collapse: collapse;
+}
+
+.prose table th,
+.prose table td {
+    border: 1px solid #E5E7EB;
+    padding: 0.75rem;
+}
+
+.prose table th {
+    background-color: #F9FAFB;
+    font-weight: 600;
+    text-align: left;
+}
+
+/* Single Post Header Improvements */
+.single-post-header {
+    border-bottom: 1px solid #E5E7EB;
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Author Info Styling */
+.author-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.author-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Social Share Buttons */
+.trendtoday-social-share {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.trendtoday-share-label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.trendtoday-share-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Mobile: Horizontal scroll for better UX */
+@media (max-width: 768px) {
+    .trendtoday-share-buttons {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+        gap: 0.5rem;
+        padding-bottom: 0.5rem;
+        margin-right: -1rem;
+        padding-right: 1rem;
+    }
+    
+    .trendtoday-share-buttons::-webkit-scrollbar {
+        height: 4px;
+    }
+    
+    .trendtoday-share-buttons::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .trendtoday-share-buttons::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 2px;
+    }
+    
+    /* Make buttons smaller on mobile */
+    .trendtoday-share-btn {
+        flex-shrink: 0;
+    }
+    
+    .trendtoday-share-icon-only .trendtoday-share-btn {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .trendtoday-share-icon-only .trendtoday-share-btn i {
+        font-size: 1.125rem;
+    }
+    
+    .trendtoday-share-icon-text .trendtoday-share-btn,
+    .trendtoday-share-button .trendtoday-share-btn {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8125rem;
+        min-width: auto;
+    }
+    
+    .trendtoday-share-btn-label {
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+    
+    /* Hide label on mobile if icon_text or button style */
+    .trendtoday-share-icon-text .trendtoday-share-btn-label,
+    .trendtoday-share-button .trendtoday-share-btn-label {
+        display: none;
+    }
+    
+    /* Adjust container - keep in same line */
+    .trendtoday-social-share {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: nowrap;
+    }
+    
+    .trendtoday-share-label {
+        font-size: 0.75rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+}
+
+.trendtoday-share-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: white;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    outline: none;
+}
+
+.trendtoday-share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0.9;
+}
+
+.trendtoday-share-btn:active {
+    transform: translateY(0);
+}
+
+.trendtoday-share-btn i {
+    font-size: 1.125rem;
+}
+
+.trendtoday-share-btn-label {
+    font-size: 0.875rem;
+}
+
+/* Icon Only Style */
+.trendtoday-share-icon-only .trendtoday-share-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    padding: 0;
+}
+
+.trendtoday-share-icon-only .trendtoday-share-btn i {
+    font-size: 1.25rem;
+}
+
+/* Icon + Text Style */
+.trendtoday-share-icon-text .trendtoday-share-btn {
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+}
+
+/* Button Style */
+.trendtoday-share-button .trendtoday-share-btn {
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    min-width: 120px;
+    justify-content: center;
+}
+
+/* Size Variations */
+.trendtoday-social-share.text-sm .trendtoday-share-btn {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.trendtoday-social-share.text-sm .trendtoday-share-icon-only .trendtoday-share-btn {
+    width: 36px;
+    height: 36px;
+}
+
+.trendtoday-social-share.text-lg .trendtoday-share-btn {
+    font-size: 1rem;
+    padding: 1rem 1.5rem;
+}
+
+.trendtoday-social-share.text-lg .trendtoday-share-icon-only .trendtoday-share-btn {
+    width: 52px;
+    height: 52px;
+}
+
+.trendtoday-social-share.text-lg .trendtoday-share-btn i {
+    font-size: 1.5rem;
+}
+
+/* Floating Share Buttons */
+.trendtoday-floating-share {
+    position: fixed;
+    left: 20px;
+    bottom: 100px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.trendtoday-floating-share-toggle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #FF4500;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    font-size: 1.5rem;
+}
+
+.trendtoday-floating-share-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    background: #FF5500;
+}
+
+.trendtoday-floating-share.active .trendtoday-floating-share-toggle {
+    background: #6B7280;
+}
+
+.trendtoday-floating-share-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.trendtoday-floating-share.active .trendtoday-floating-share-buttons {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.trendtoday-floating-share-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    font-size: 1.25rem;
+}
+
+.trendtoday-floating-share-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Copy Link Toast Notification */
+.trendtoday-copy-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #10B981;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 500;
+}
+
+.trendtoday-copy-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.trendtoday-copy-toast i {
+    font-size: 1.25rem;
+}
+
+/* Search Suggestions */
+.trendtoday-search-container {
+    position: relative;
+}
+
+.trendtoday-search-suggestions {
+    min-width: 100%;
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 0.5rem;
+}
+
+.trendtoday-search-suggestions a {
+    text-decoration: none;
+}
+
+.trendtoday-search-suggestions img {
+    object-fit: cover;
+}
+
+/* Search Modal */
+.trendtoday-search-modal {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.trendtoday-search-modal.hidden {
+    display: none;
+}
+
+.trendtoday-search-modal-content {
+    width: 100%;
+    max-width: 800px;
+    animation: slideDown 0.3s ease-out;
+}
+
+.trendtoday-search-fullpage .trendtoday-search-modal-content {
+    max-width: 100%;
+    border-radius: 0;
+    margin: 0;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.trendtoday-search-input:focus {
+    outline: none;
+}
+
+/* Table of Contents */
+.trendtoday-toc {
+    margin-bottom: 2rem;
+}
+
+.trendtoday-toc-container {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid #F3F4F6;
+    transition: box-shadow 0.3s ease;
+}
+
+.trendtoday-toc-container:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.trendtoday-toc-header {
+    margin-bottom: 1.25rem;
+}
+
+.trendtoday-toc-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.trendtoday-toc-title i {
+    color: #FF4500;
+    font-size: 1.25rem;
+}
+
+.trendtoday-toc-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: 1.25rem;
+}
+
+.trendtoday-toc-toggle .trendtoday-toc-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.trendtoday-toc-toggle .trendtoday-toc-title i {
+    color: #FF4500;
+    font-size: 1.25rem;
+}
+
+.trendtoday-toc-icon {
+    transition: transform 0.3s ease;
+    color: #6B7280;
+    font-size: 0.875rem;
+}
+
+.trendtoday-toc-content {
+    margin-top: 0;
+    transition: max-height 0.3s ease;
+    overflow: hidden;
+}
+
+.trendtoday-toc-content-collapsed {
+    max-height: 0;
+    margin-top: 0;
+    overflow: hidden;
+}
+
+.trendtoday-toc-nav {
+    font-size: 0.875rem;
+}
+
+.trendtoday-toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.trendtoday-toc-item {
+    margin: 0;
+}
+
+.trendtoday-toc-link {
+    display: block;
+    color: #374151;
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    line-height: 1.5;
+    font-size: 0.875rem;
+}
+
+.trendtoday-toc-link:hover {
+    color: #FF4500;
+    background-color: #F9FAFB;
+}
+
+.trendtoday-toc-link-active {
+    color: #FF4500;
+    background-color: #F9FAFB;
+    font-weight: 600;
+}
+
+.trendtoday-toc-nested {
+    list-style: none;
+    padding-left: 1.25rem;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.trendtoday-toc-item-level-3 {
+    padding-left: 0.5rem;
+}
+
+.trendtoday-toc-item-level-4 {
+    padding-left: 1rem;
+}
+
+.trendtoday-toc-item-level-5 {
+    padding-left: 1.5rem;
+}
+
+.trendtoday-toc-item-level-6 {
+    padding-left: 2rem;
+}
+
+/* TOC Position Styles */
+.trendtoday-toc-sidebar {
+    position: relative;
+}
+
+.trendtoday-toc-sidebar .trendtoday-toc-container {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid #F3F4F6;
+    transition: box-shadow 0.3s ease;
+}
+
+.trendtoday-toc-sidebar .trendtoday-toc-container:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.trendtoday-toc-sticky .trendtoday-toc-container {
+    position: sticky;
+    top: 100px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+}
+
+.trendtoday-toc-floating {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 999;
+    max-width: 300px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.trendtoday-toc-floating .trendtoday-toc-container {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* Mobile TOC */
+.trendtoday-toc-mobile-toggle {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    bottom: 5rem; /* 80px - ให้ห่างจาก bottom */
+    left: 1rem; /* 16px - อยู่ด้านซ้าย */
+}
+
+/* Adjust Back to Top button position on mobile when TOC is present */
+body:has(.trendtoday-toc-mobile-toggle) #back-to-top {
+    bottom: 1.5rem; /* 24px - ปรับให้ใกล้ bottom มากขึ้น */
+    right: 1rem; /* 16px - อยู่ด้านขวา */
+}
+
+.trendtoday-toc-mobile-drawer {
+    transition: opacity 0.3s ease;
+}
+
+.trendtoday-toc-mobile-drawer.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.trendtoday-toc-mobile-content {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+}
+
+.trendtoday-toc-mobile-content-open {
+    transform: translateX(0);
+}
+
+.trendtoday-toc-mobile-nav {
+    font-size: 0.875rem;
+}
+
+.trendtoday-toc-mobile-nav .trendtoday-toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.trendtoday-toc-mobile-nav .trendtoday-toc-item {
+    margin-bottom: 0.5rem;
+}
+
+.trendtoday-toc-mobile-nav .trendtoday-toc-link {
+    display: block;
+    color: #4B5563;
+    text-decoration: none;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.trendtoday-toc-mobile-nav .trendtoday-toc-link:hover,
+.trendtoday-toc-mobile-nav .trendtoday-toc-link-active {
+    color: #FF4500;
+    background-color: #FEF3F2;
+    font-weight: 600;
+}
+
+/* TOC Style Variations */
+.trendtoday-toc-style-numbered .trendtoday-toc-list {
+    counter-reset: toc-counter;
+}
+
+.trendtoday-toc-style-numbered .trendtoday-toc-item {
+    counter-increment: toc-counter;
+}
+
+.trendtoday-toc-style-numbered .trendtoday-toc-link::before {
+    content: counter(toc-counter) ". ";
+    font-weight: 600;
+    color: #6B7280;
+}
+
+.trendtoday-toc-style-simple .trendtoday-toc-nested {
+    padding-left: 0.75rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .trendtoday-floating-share {
+        left: 10px;
+        bottom: 80px;
+    }
+    
+    .trendtoday-floating-share-toggle {
+        width: 48px;
+        height: 48px;
+        font-size: 1.25rem;
+    }
+    
+    .trendtoday-floating-share-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.125rem;
+    }
+    
+    .trendtoday-social-share {
+        justify-content: center;
+    }
+    
+    .trendtoday-search-container {
+        display: none;
+    }
+    
+    .trendtoday-search-modal {
+        padding: 1rem;
+    }
+    
+    .trendtoday-search-modal-content {
+        margin-top: 1rem;
+    }
+    
+    /* TOC Mobile Styles */
+    .trendtoday-toc-floating {
+        display: none;
+    }
+    
+    .trendtoday-toc-sidebar {
+        margin-bottom: 1.5rem;
+    }
+    
+    .trendtoday-toc-sticky .trendtoday-toc-container {
+        position: relative;
+        top: 0;
+        max-height: none;
+    }
+    
+    .trendtoday-toc-mobile-top {
+        margin-bottom: 1.5rem;
+    }
+    
+    .trendtoday-toc-mobile-bottom {
+        margin-top: 1.5rem;
+    }
+    
+    .trendtoday-toc-auto-collapse-mobile .trendtoday-toc-content {
+        max-height: 0;
+        overflow: hidden;
+    }
+    
+    .trendtoday-toc-auto-collapse-mobile .trendtoday-toc-content:not(.trendtoday-toc-content-collapsed) {
+        max-height: none;
+    }
+    
+    /* Adjust button positions on mobile */
+    .trendtoday-toc-mobile-toggle {
+        bottom: 5rem !important; /* 80px - ให้ห่างจาก bottom */
+        left: 1rem !important; /* 16px - อยู่ด้านซ้าย */
+        right: auto !important;
+    }
+    
+    /* Back to Top button on mobile */
+    #back-to-top {
+        bottom: 1.5rem !important; /* 24px - ใกล้ bottom */
+        right: 1rem !important; /* 16px - อยู่ด้านขวา */
+    }
+    
+    /* Floating Share Buttons - adjust position if TOC is present */
+    .trendtoday-floating-share {
+        bottom: 5.5rem; /* ปรับให้อยู่เหนือ TOC button */
+    }
+}
+
+/* Category Badge */
+.category-badge-single {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+/* Reading Time */
+.reading-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #6B7280;
+    font-size: 0.875rem;
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+    .prose {
+        font-size: 1rem;
+    }
+    
+    .prose h1 {
+        font-size: 1.875rem;
+    }
+    
+    .prose h2 {
+        font-size: 1.5rem;
+    }
+    
+    .prose h3 {
+        font-size: 1.25rem;
+    }
+}
