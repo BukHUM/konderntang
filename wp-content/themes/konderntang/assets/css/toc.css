@@ -1,0 +1,148 @@
+/**
+ * Table of Contents Styles
+ *
+ * @package KonDernTang
+ * @since 1.0.0
+ */
+
+.konderntang-toc {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+
+.konderntang-toc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.konderntang-toc-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+    color: #1f2937;
+}
+
+.konderntang-toc-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.konderntang-toc-toggle-icon {
+    width: 20px;
+    height: 20px;
+    position: relative;
+}
+
+.konderntang-toc-toggle-icon::before,
+.konderntang-toc-toggle-icon::after {
+    content: '';
+    position: absolute;
+    background: #6b7280;
+    transition: transform 0.3s;
+}
+
+.konderntang-toc-toggle-icon::before {
+    width: 12px;
+    height: 2px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.konderntang-toc-toggle-icon::after {
+    width: 2px;
+    height: 12px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.konderntang-toc-collapsed .konderntang-toc-toggle-icon::after {
+    transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.konderntang-toc-nav {
+    display: block;
+}
+
+.konderntang-toc-collapsed .konderntang-toc-nav {
+    display: none;
+}
+
+.konderntang-toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.konderntang-toc-item {
+    margin-bottom: 0.5rem;
+}
+
+.konderntang-toc-item-level-2 {
+    margin-left: 0;
+}
+
+.konderntang-toc-item-level-3 {
+    margin-left: 1rem;
+}
+
+.konderntang-toc-item-level-4 {
+    margin-left: 2rem;
+}
+
+.konderntang-toc-link {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    color: #4b5563;
+    text-decoration: none;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.konderntang-toc-link:hover {
+    background-color: #f3f4f6;
+    color: #0ea5e9;
+}
+
+.konderntang-toc-link.active {
+    background-color: #dbeafe;
+    color: #0ea5e9;
+    font-weight: 500;
+}
+
+.konderntang-toc-list-level-3,
+.konderntang-toc-list-level-4 {
+    margin-top: 0.5rem;
+    margin-left: 1rem;
+    border-left: 2px solid #e5e7eb;
+    padding-left: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .konderntang-toc {
+        padding: 0.75rem;
+    }
+
+    .konderntang-toc-title {
+        font-size: 1rem;
+    }
+
+    .konderntang-toc-link {
+        font-size: 0.8125rem;
+        padding: 0.375rem 0.5rem;
+    }
+}

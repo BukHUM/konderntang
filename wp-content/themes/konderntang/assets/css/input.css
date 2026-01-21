@@ -1,0 +1,29 @@
+@charset "UTF-8";
+/*
+Theme Name: คนเดินทาง
+Theme URI: https://www.konderntang.com
+Author: KonDernTang Team
+Author URI: https://www.konderntang.com
+Description: เว็บไซต์ท่องเที่ยวสำหรับคนเดินทาง - Component-based WordPress theme สำหรับ www.konderntang.com
+Version: 1.0.0
+Requires at least: 6.0
+Tested up to: 6.9
+Requires PHP: 8.0
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: konderntang
+Tags: travel, blog, magazine, responsive, modern, clean, custom-menu, featured-images, post-formats, threaded-comments, translation-ready, component-based
+
+KonDernTang is a modern WordPress theme designed for travel websites with component-based architecture.
+*/
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Styles */
+@layer components {
+    .container {
+        @apply mx-auto px-4;
+    }
+}

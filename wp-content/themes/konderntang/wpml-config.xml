@@ -1,0 +1,10 @@
+<wpml-config>
+    <admin-texts>
+        <key name="theme_mods_konderntang">
+            <key name="footer_copyright_text" />
+            <key name="toc_title" />
+            <key name="cookie_consent_message" />
+            <key name="logo_fallback_image" />
+        </key>
+    </admin-texts>
+</wpml-config>
