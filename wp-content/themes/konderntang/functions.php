@@ -30,18 +30,24 @@ require_once KONDERN_THEME_DIR . '/inc/widget-areas.php';
 require_once KONDERN_THEME_DIR . '/inc/customizer.php';
 require_once KONDERN_THEME_DIR . '/inc/admin-settings.php';
 require_once KONDERN_THEME_DIR . '/inc/admin-menu.php';
+require_once KONDERN_THEME_DIR . '/inc/admin-columns.php';
 require_once KONDERN_THEME_DIR . '/inc/enqueue-scripts.php';
+require_once KONDERN_THEME_DIR . '/inc/google-fonts.php';
+
 require_once KONDERN_THEME_DIR . '/inc/widget-styling.php';
 require_once KONDERN_THEME_DIR . '/inc/table-of-contents.php';
 require_once KONDERN_THEME_DIR . '/inc/custom-post-types.php';
 require_once KONDERN_THEME_DIR . '/inc/custom-fields.php';
 require_once KONDERN_THEME_DIR . '/inc/ajax-handlers.php';
+require_once KONDERN_THEME_DIR . '/inc/user-behavior-tracker.php';
+require_once KONDERN_THEME_DIR . '/inc/recommendation-engine.php';
+require_once KONDERN_THEME_DIR . '/inc/google-analytics.php';
 require_once KONDERN_THEME_DIR . '/inc/performance.php';
 require_once KONDERN_THEME_DIR . '/inc/seo.php';
 require_once KONDERN_THEME_DIR . '/inc/security.php';
 
 // Seeder (Admin only)
-if ( is_admin() ) {
+if (is_admin()) {
     require_once KONDERN_THEME_DIR . '/inc/seeder/admin-seeder.php';
 }
 
@@ -53,6 +59,7 @@ require_once KONDERN_THEME_DIR . '/widgets/class-newsletter-widget.php';
 require_once KONDERN_THEME_DIR . '/widgets/class-trending-tags-widget.php';
 require_once KONDERN_THEME_DIR . '/widgets/class-recently-viewed-widget.php';
 require_once KONDERN_THEME_DIR . '/widgets/class-social-links-widget.php';
+require_once KONDERN_THEME_DIR . '/widgets/class-personalized-recommendations-widget.php';
 
 // Register widgets (after widget classes are loaded)
 require_once KONDERN_THEME_DIR . '/inc/register-widgets.php';

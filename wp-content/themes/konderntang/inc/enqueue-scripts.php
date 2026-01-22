@@ -23,14 +23,6 @@ function konderntang_scripts()
         KONDERN_THEME_VERSION
     );
 
-    // Google Fonts
-    wp_enqueue_style(
-        'konderntang-fonts',
-        'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap',
-        array(),
-        null
-    );
-
     // Font Awesome (for menu icons)
     wp_enqueue_style(
         'konderntang-fontawesome',
@@ -55,6 +47,24 @@ function konderntang_scripts()
         array('konderntang-style'),
         KONDERN_THEME_VERSION
     );
+
+    // Personalized Recommendations Widget Styles
+    wp_enqueue_style(
+        'konderntang-personalized-recommendations',
+        KONDERN_THEME_URI . '/assets/css/widgets/personalized-recommendations.css',
+        array('konderntang-widgets'),
+        KONDERN_THEME_VERSION
+    );
+
+    // Single Post Typography Styles (only on single posts)
+    if (is_single()) {
+        wp_enqueue_style(
+            'konderntang-single-post',
+            KONDERN_THEME_URI . '/assets/css/single-post.css',
+            array('konderntang-style'),
+            KONDERN_THEME_VERSION
+        );
+    }
 
     // Table of Contents Styles (only on single posts)
     if (is_singular('post')) {
@@ -188,6 +198,47 @@ function konderntang_scripts()
         true
     );
 
+    // Behavior Tracking JavaScript (on single posts and front page)
+    if (is_singular('post') || is_front_page()) {
+        wp_enqueue_script(
+            'konderntang-behavior-tracker',
+            KONDERN_THEME_URI . '/assets/js/behavior-tracker.js',
+            array('konderntang-main'),
+            KONDERN_THEME_VERSION,
+            true
+        );
+
+        // Localize behavior tracker script
+        wp_localize_script(
+            'konderntang-behavior-tracker',
+            'behaviorTrackerData',
+            array(
+                'postId' => is_singular('post') ? get_the_ID() : 0,
+                'userId' => get_current_user_id(),
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('konderntang-behavior-nonce')
+            )
+        );
+    }
+
+    // Search Tracker (on all pages with search capability)
+    wp_enqueue_script(
+        'konderntang-search-tracker',
+        KONDERN_THEME_URI . '/assets/js/search-tracker.js',
+        array('konderntang-main'),
+        KONDERN_THEME_VERSION,
+        true
+    );
+
+    // Referrer & UTM Tracker (on all pages - runs once on page load)
+    wp_enqueue_script(
+        'konderntang-referrer-tracker',
+        KONDERN_THEME_URI . '/assets/js/referrer-tracker.js',
+        array('konderntang-main'),
+        KONDERN_THEME_VERSION,
+        true
+    );
+
     // Seasonal JavaScript (on seasonal page)
     if (is_page('seasonal') || is_page_template('page-seasonal.php')) {
         wp_enqueue_script(
@@ -269,7 +320,7 @@ function konderntang_customize_preview_js()
 {
     wp_enqueue_script(
         'konderntang-customizer-preview',
-        KONDERN_THEME_URI . '/inc/customizer-preview.js',
+        get_template_directory_uri() . '/assets/js/customizer-preview.js',
         array('customize-preview', 'jquery'),
         KONDERN_THEME_VERSION,
         true
@@ -292,7 +343,7 @@ function konderntang_admin_scripts($hook)
         'post-new.php',
         'edit.php',
     );
-    
+
     // Check if current hook matches or contains 'konderntang'
     $should_load = false;
     if (in_array($hook, $allowed_hooks, true)) {
@@ -300,31 +351,31 @@ function konderntang_admin_scripts($hook)
     } elseif (strpos($hook, 'konderntang') !== false) {
         $should_load = true;
     }
-    
+
     if (!$should_load) {
         return;
     }
-    
+
     // Use filemtime for cache busting - forces reload when files change
     $css_path = KONDERN_THEME_DIR . '/assets/css/admin.css';
     $js_path = KONDERN_THEME_DIR . '/assets/js/admin.js';
-    
+
     // Force cache busting by using current timestamp
     // This ensures CSS/JS always reloads during development
-    $css_version = file_exists($css_path) 
-        ? filemtime($css_path) 
+    $css_version = file_exists($css_path)
+        ? filemtime($css_path)
         : time();
-    
+
     // Add timestamp to force reload
     $css_version = $css_version . '.' . time();
-    
-    $js_version = file_exists($js_path) 
-        ? filemtime($js_path) 
+
+    $js_version = file_exists($js_path)
+        ? filemtime($js_path)
         : time();
-    
+
     // Add timestamp to force reload
     $js_version = $js_version . '.' . time();
-    
+
     // Enqueue WordPress Media
     wp_enqueue_media();
 
@@ -335,7 +386,7 @@ function konderntang_admin_scripts($hook)
         array(),
         $css_version
     );
-    
+
     // Admin JavaScript
     wp_enqueue_script(
         'konderntang-admin',
@@ -377,6 +428,9 @@ function konderntang_defer_scripts($tag, $handle)
         'konderntang-auth',
         'konderntang-news-archive',
         'konderntang-recently-viewed',
+        'konderntang-behavior-tracker',
+        'konderntang-search-tracker',
+        'konderntang-referrer-tracker',
         'konderntang-seasonal',
         'konderntang-error-pages',
         'konderntang-geo-location'

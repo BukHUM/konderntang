@@ -12,8 +12,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Register Custom Post Types
+ * 
+ * NOTE: If MU-Plugin 'konderntang-custom-types.php' exists, 
+ * this function will be skipped to avoid duplicate registration.
  */
 function konderntang_register_post_types() {
+    // Check if MU-Plugin is handling registration
+    if ( function_exists( 'konderntang_mu_register_post_types' ) ) {
+        return; // MU-Plugin is handling this, skip theme registration
+    }
     // Travel Guides Post Type
     register_post_type(
         'travel_guide',
@@ -126,8 +133,15 @@ add_action( 'init', 'konderntang_register_post_types' );
 
 /**
  * Register Custom Taxonomies
+ * 
+ * NOTE: If MU-Plugin 'konderntang-custom-types.php' exists, 
+ * this function will be skipped to avoid duplicate registration.
  */
 function konderntang_register_taxonomies() {
+    // Check if MU-Plugin is handling registration
+    if ( function_exists( 'konderntang_mu_register_taxonomies' ) ) {
+        return; // MU-Plugin is handling this, skip theme registration
+    }
     // Destinations Taxonomy (for Travel Guides)
     register_taxonomy(
         'destination',
@@ -213,8 +227,14 @@ add_action( 'init', 'konderntang_register_taxonomies' );
 /**
  * Force Destinations and Travel Types to show only in Posts menu
  * This ensures they appear under Posts menu instead of Travel Guides menu
+ * 
+ * NOTE: If MU-Plugin is active, this will be handled by MU-Plugin instead.
  */
 function konderntang_taxonomy_menu_placement( $parent_file ) {
+    // Check if MU-Plugin is handling this
+    if ( function_exists( 'konderntang_mu_taxonomy_menu_placement' ) ) {
+        return $parent_file; // Let MU-Plugin handle it
+    }
     global $current_screen;
     
     // Force Destinations and Travel Types to show under Posts menu
@@ -230,8 +250,14 @@ add_filter( 'parent_file', 'konderntang_taxonomy_menu_placement' );
 
 /**
  * Remove taxonomy submenus from Travel Guides menu
+ * 
+ * NOTE: If MU-Plugin is active, this will be handled by MU-Plugin instead.
  */
 function konderntang_remove_taxonomy_from_cpt_menu() {
+    // Check if MU-Plugin is handling this
+    if ( function_exists( 'konderntang_mu_remove_taxonomy_from_cpt_menu' ) ) {
+        return; // Let MU-Plugin handle it
+    }
     global $submenu;
     
     // Remove Destinations and Travel Types from Travel Guides menu

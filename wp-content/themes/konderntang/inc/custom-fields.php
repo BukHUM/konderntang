@@ -154,7 +154,7 @@ function konderntang_toc_options_callback( $post ) {
             <option value="after_first_heading" <?php selected( $toc_position, 'after_first_heading' ); ?>><?php esc_html_e( 'After First Heading', 'konderntang' ); ?></option>
             <option value="sidebar" <?php selected( $toc_position, 'sidebar' ); ?>><?php esc_html_e( 'Sidebar', 'konderntang' ); ?></option>
         </select>
-    </p>
+    </div>
     <?php
 }
 

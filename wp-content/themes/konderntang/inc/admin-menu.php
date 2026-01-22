@@ -54,6 +54,16 @@ function konderntang_add_admin_menu() {
         'konderntang-docs',
         'konderntang_docs_page'
     );
+    
+    // Custom Fields Cleaner submenu
+    add_submenu_page(
+        'konderntang',
+        esc_html__( 'Custom Fields Cleaner', 'konderntang' ),
+        esc_html__( 'Custom Fields Cleaner', 'konderntang' ),
+        'manage_options',
+        'konderntang-custom-fields-cleaner',
+        'konderntang_custom_fields_cleaner_page'
+    );
 }
 add_action( 'admin_menu', 'konderntang_add_admin_menu', 9 );
 
@@ -412,3 +422,256 @@ function konderntang_docs_page() {
     <?php
 }
 
+/**
+ * Custom Fields Cleaner page callback
+ */
+function konderntang_custom_fields_cleaner_page() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'konderntang' ) );
+    }
+    
+    global $wpdb;
+    
+    // Handle deletion
+    if ( isset( $_POST['konderntang_delete_meta_keys'] ) && check_admin_referer( 'konderntang_delete_meta_keys' ) ) {
+        $meta_keys_to_delete = isset( $_POST['meta_keys'] ) ? array_map( 'sanitize_text_field', $_POST['meta_keys'] ) : array();
+        $deleted_count = 0;
+        
+        foreach ( $meta_keys_to_delete as $meta_key ) {
+            // Safety check: Don't delete _konderntang_* fields that are still in use
+            if ( strpos( $meta_key, '_konderntang_' ) === 0 ) {
+                // Check if this meta key is still used in the theme
+                $is_used = konderntang_is_meta_key_used( $meta_key );
+                if ( $is_used ) {
+                    continue; // Skip if still in use
+                }
+            }
+            
+            // Delete all post meta with this key
+            $result = $wpdb->delete(
+                $wpdb->postmeta,
+                array( 'meta_key' => $meta_key ),
+                array( '%s' )
+            );
+            
+            if ( $result !== false ) {
+                $deleted_count += $result;
+            }
+        }
+        
+        echo '<div class="notice notice-success"><p>';
+        printf( esc_html__( 'ลบ Custom Fields สำเร็จ: %d records', 'konderntang' ), $deleted_count );
+        echo '</p></div>';
+    }
+    
+    // Get all unique meta keys (excluding WordPress core protected keys)
+    $meta_keys = $wpdb->get_col(
+        "SELECT DISTINCT meta_key 
+        FROM {$wpdb->postmeta} 
+        WHERE meta_key NOT LIKE '\_wp\_%'
+        AND meta_key NOT LIKE '\_edit\_%'
+        AND meta_key != ''
+        ORDER BY meta_key ASC"
+    );
+    
+    // Get count for each meta key
+    $meta_keys_with_count = array();
+    foreach ( $meta_keys as $meta_key ) {
+        $count = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = %s",
+            $meta_key
+        ) );
+        
+        $is_used = konderntang_is_meta_key_used( $meta_key );
+        $is_protected = konderntang_is_meta_key_protected( $meta_key );
+        
+        $meta_keys_with_count[] = array(
+            'key' => $meta_key,
+            'count' => $count,
+            'is_used' => $is_used,
+            'is_protected' => $is_protected,
+        );
+    }
+    
+    // Sort by count (descending)
+    usort( $meta_keys_with_count, function( $a, $b ) {
+        return $b['count'] - $a['count'];
+    } );
+    
+    // Get theme meta keys (for reference)
+    $theme_meta_keys = konderntang_get_theme_meta_keys();
+    ?>
+    <div class="wrap">
+        <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+        
+        <div class="notice notice-warning">
+            <p><strong><?php esc_html_e( 'คำเตือน:', 'konderntang' ); ?></strong> <?php esc_html_e( 'การลบ Custom Fields เป็นการกระทำที่ไม่สามารถย้อนกลับได้ กรุณาตรวจสอบให้แน่ใจก่อนลบ', 'konderntang' ); ?></p>
+        </div>
+        
+        <form method="post" action="">
+            <?php wp_nonce_field( 'konderntang_delete_meta_keys' ); ?>
+            
+            <div style="margin: 20px 0;">
+                <button type="submit" name="konderntang_delete_meta_keys" class="button button-primary" onclick="return confirm('<?php esc_attr_e( 'คุณแน่ใจหรือไม่ว่าต้องการลบ Custom Fields ที่เลือก? การกระทำนี้ไม่สามารถย้อนกลับได้!', 'konderntang' ); ?>');">
+                    <?php esc_html_e( 'ลบ Custom Fields ที่เลือก', 'konderntang' ); ?>
+                </button>
+            </div>
+            
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">
+                            <input type="checkbox" id="select-all" />
+                        </th>
+                        <th><?php esc_html_e( 'Meta Key', 'konderntang' ); ?></th>
+                        <th style="width: 150px;"><?php esc_html_e( 'จำนวน Records', 'konderntang' ); ?></th>
+                        <th style="width: 150px;"><?php esc_html_e( 'สถานะ', 'konderntang' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ( ! empty( $meta_keys_with_count ) ) : ?>
+                        <?php foreach ( $meta_keys_with_count as $item ) : 
+                            $can_delete = ! $item['is_used'] && ! $item['is_protected'];
+                            $status_class = $item['is_used'] ? 'status-used' : ( $item['is_protected'] ? 'status-protected' : 'status-unused' );
+                            $status_text = $item['is_used'] ? esc_html__( 'ใช้อยู่ (Theme)', 'konderntang' ) : ( $item['is_protected'] ? esc_html__( 'ป้องกัน (WordPress)', 'konderntang' ) : esc_html__( 'ไม่ได้ใช้', 'konderntang' ) );
+                        ?>
+                            <tr class="<?php echo esc_attr( $status_class ); ?>">
+                                <td>
+                                    <?php if ( $can_delete ) : ?>
+                                        <input type="checkbox" name="meta_keys[]" value="<?php echo esc_attr( $item['key'] ); ?>" />
+                                    <?php else : ?>
+                                        <span class="dashicons dashicons-lock" style="color: #d63638;"></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <code><?php echo esc_html( $item['key'] ); ?></code>
+                                    <?php if ( in_array( $item['key'], $theme_meta_keys ) ) : ?>
+                                        <span class="dashicons dashicons-yes-alt" style="color: #00a32a;" title="<?php esc_attr_e( 'ใช้ใน Theme', 'konderntang' ); ?>"></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo number_format_i18n( $item['count'] ); ?></td>
+                                <td>
+                                    <span class="status-badge status-<?php echo esc_attr( $status_class ); ?>">
+                                        <?php echo $status_text; ?>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else : ?>
+                        <tr>
+                            <td colspan="4"><?php esc_html_e( 'ไม่พบ Custom Fields', 'konderntang' ); ?></td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </form>
+        
+        <style>
+            .status-used { background-color: #fff3cd !important; }
+            .status-protected { background-color: #f8d7da !important; }
+            .status-unused { background-color: #d1ecf1 !important; }
+            .status-badge {
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            .status-status-used { background: #fff3cd; color: #856404; }
+            .status-status-protected { background: #f8d7da; color: #721c24; }
+            .status-status-unused { background: #d1ecf1; color: #0c5460; }
+        </style>
+        
+        <script>
+            document.getElementById('select-all').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('input[name="meta_keys[]"]');
+                checkboxes.forEach(function(checkbox) {
+                    checkbox.checked = this.checked;
+                }, this);
+            });
+        </script>
+    </div>
+    <?php
+}
+
+/**
+ * Check if meta key is still used in theme
+ */
+function konderntang_is_meta_key_used( $meta_key ) {
+    // List of meta keys used in theme
+    $theme_meta_keys = konderntang_get_theme_meta_keys();
+    return in_array( $meta_key, $theme_meta_keys, true );
+}
+
+/**
+ * Get list of meta keys used in theme
+ */
+function konderntang_get_theme_meta_keys() {
+    return array(
+        // Post Options
+        '_konderntang_breaking_news',
+        '_konderntang_reading_time',
+        '_konderntang_featured_post',
+        
+        // TOC Options
+        '_konderntang_toc_enabled',
+        '_konderntang_toc_position',
+        
+        // Travel Guide Options
+        '_konderntang_location',
+        '_konderntang_duration',
+        '_konderntang_season',
+        '_konderntang_difficulty',
+        '_konderntang_price_range',
+        
+        // Hotel Options
+        '_konderntang_hotel_price',
+        '_konderntang_hotel_rating',
+        '_konderntang_hotel_amenities',
+        '_konderntang_hotel_address',
+        '_konderntang_hotel_phone',
+        '_konderntang_hotel_website',
+        
+        // Promotion Options
+        '_konderntang_promotion_price',
+        '_konderntang_promotion_discount',
+        '_konderntang_promotion_start_date',
+        '_konderntang_promotion_end_date',
+        '_konderntang_promotion_code',
+        
+        // SEO Options
+        '_konderntang_meta_description',
+        '_konderntang_meta_keywords',
+        '_konderntang_og_title',
+        '_konderntang_og_description',
+        '_konderntang_og_image',
+        
+        // Other theme meta keys
+        'post_views_count',
+    );
+}
+
+/**
+ * Check if meta key is protected (WordPress core)
+ */
+function konderntang_is_meta_key_protected( $meta_key ) {
+    // WordPress core protected meta keys
+    $protected_keys = array(
+        '_edit_lock',
+        '_edit_last',
+        '_wp_old_slug',
+        '_wp_page_template',
+        '_thumbnail_id',
+        '_wp_attachment_metadata',
+        '_wp_attached_file',
+    );
+    
+    // Check if starts with protected prefixes
+    $protected_prefixes = array( '_wp_', '_edit_' );
+    foreach ( $protected_prefixes as $prefix ) {
+        if ( strpos( $meta_key, $prefix ) === 0 ) {
+            return true;
+        }
+    }
+    
+    return in_array( $meta_key, $protected_keys, true );
+}
