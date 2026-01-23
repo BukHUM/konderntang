@@ -5,7 +5,7 @@
  * @since 1.0.0
  */
 
-(function() {
+(function () {
     'use strict';
 
     // Breadcrumb Configuration (from PHP)
@@ -16,16 +16,15 @@
         const breadcrumb = document.getElementById('breadcrumb');
         const breadcrumbCurrent = document.getElementById('breadcrumb-current');
         const breadcrumbSeparator = document.getElementById('breadcrumb-separator');
-        
+
         if (!breadcrumb || !breadcrumbCurrent) return;
-        
+
         const config = breadcrumbConfig[pageName];
-        
+
         if (config && config.show) {
             breadcrumb.classList.remove('hidden');
-            if (breadcrumbCurrent) {
-                breadcrumbCurrent.textContent = config.text;
-            }
+            // Removed: breadcrumbCurrent.textContent = config.text;
+            // Let PHP handle the breadcrumb text (it's already correct)
             if (breadcrumbSeparator) {
                 breadcrumbSeparator.classList.remove('hidden');
             }
@@ -38,7 +37,7 @@
     function toggleMobileSubmenu(submenuId) {
         const submenu = document.getElementById(submenuId);
         const icon = document.getElementById(submenuId + '-icon');
-        
+
         if (submenu && icon) {
             submenu.classList.toggle('hidden');
             icon.classList.toggle('rotate-180');
@@ -52,19 +51,19 @@
     // Social Share - Copy Link Handler
     function initShareCopyLink() {
         const copyButtons = document.querySelectorAll('.konderntang-share-copy');
-        
-        copyButtons.forEach(function(button) {
-            button.addEventListener('click', function(e) {
+
+        copyButtons.forEach(function (button) {
+            button.addEventListener('click', function (e) {
                 e.preventDefault();
-                
+
                 const url = this.getAttribute('data-copy-url');
                 if (!url) return;
-                
+
                 // Copy to clipboard
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(url).then(function() {
+                    navigator.clipboard.writeText(url).then(function () {
                         showCopySuccess(button);
-                    }).catch(function() {
+                    }).catch(function () {
                         fallbackCopy(url, button);
                     });
                 } else {
@@ -83,31 +82,31 @@
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        
+
         try {
             document.execCommand('copy');
             showCopySuccess(button);
         } catch (err) {
             console.error('Copy failed:', err);
         }
-        
+
         document.body.removeChild(textArea);
     }
 
     // Show copy success feedback
     function showCopySuccess(button) {
         button.classList.add('copied');
-        
+
         // Store original text if exists
         const textEl = button.querySelector('.share-text');
         const originalText = textEl ? textEl.textContent : '';
-        
+
         if (textEl) {
             textEl.textContent = window.konderntangData?.copiedText || 'Copied!';
         }
-        
+
         // Reset after 2 seconds
-        setTimeout(function() {
+        setTimeout(function () {
             button.classList.remove('copied');
             if (textEl && originalText) {
                 textEl.textContent = originalText;
@@ -118,17 +117,17 @@
     // Social Share - Open popup window for share links
     function initSharePopup() {
         const shareButtons = document.querySelectorAll('.konderntang-share-button[target="_blank"]');
-        
-        shareButtons.forEach(function(button) {
-            button.addEventListener('click', function(e) {
+
+        shareButtons.forEach(function (button) {
+            button.addEventListener('click', function (e) {
                 e.preventDefault();
-                
+
                 const url = this.getAttribute('href');
                 const width = 600;
                 const height = 400;
                 const left = (screen.width - width) / 2;
                 const top = (screen.height - height) / 2;
-                
+
                 window.open(
                     url,
                     'share',
@@ -139,7 +138,7 @@
     }
 
     // Initialize on page load
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Determine current page
         let currentPage = 'home';
         if (document.body.classList.contains('single')) {
@@ -151,7 +150,7 @@
         } else if (document.body.classList.contains('error404')) {
             currentPage = '404';
         }
-        
+
         updateBreadcrumb(currentPage);
 
         // Initialize social share features

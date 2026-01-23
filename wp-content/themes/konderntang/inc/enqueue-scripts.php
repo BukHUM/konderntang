@@ -105,6 +105,17 @@ function konderntang_scripts()
         );
     }
 
+    // Featured Slider JavaScript (only on front page or where needed)
+    if (is_front_page() || is_page_template('page-templates/homepage.php')) {
+        wp_enqueue_script(
+            'konderntang-featured-slider',
+            KONDERN_THEME_URI . '/assets/js/featured-slider.js',
+            array('konderntang-main'),
+            KONDERN_THEME_VERSION,
+            true
+        );
+    }
+
     // AJAX JavaScript
     wp_enqueue_script(
         'konderntang-ajax',

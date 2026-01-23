@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 /**
  * Theme Version
  */
-define('KONDERN_THEME_VERSION', '1.0.0');
+define('KONDERN_THEME_VERSION', '1.0.1');
 define('KONDERN_THEME_DIR', get_template_directory());
 define('KONDERN_THEME_URI', get_template_directory_uri());
 
@@ -37,6 +37,8 @@ require_once KONDERN_THEME_DIR . '/inc/google-fonts.php';
 require_once KONDERN_THEME_DIR . '/inc/widget-styling.php';
 require_once KONDERN_THEME_DIR . '/inc/table-of-contents.php';
 require_once KONDERN_THEME_DIR . '/inc/custom-post-types.php';
+require_once KONDERN_THEME_DIR . '/inc/category-metadata.php';
+require_once KONDERN_THEME_DIR . '/inc/cpt-hero-banner.php';
 require_once KONDERN_THEME_DIR . '/inc/custom-fields.php';
 require_once KONDERN_THEME_DIR . '/inc/ajax-handlers.php';
 require_once KONDERN_THEME_DIR . '/inc/user-behavior-tracker.php';
@@ -46,9 +48,9 @@ require_once KONDERN_THEME_DIR . '/inc/performance.php';
 require_once KONDERN_THEME_DIR . '/inc/seo.php';
 require_once KONDERN_THEME_DIR . '/inc/security.php';
 
-// Seeder (Admin only)
+// Admin Tools (Seeder, Language Tools, etc.)
 if (is_admin()) {
-    require_once KONDERN_THEME_DIR . '/inc/seeder/admin-seeder.php';
+    require_once KONDERN_THEME_DIR . '/inc/admin-tools.php';
 }
 
 // Load widgets (must be loaded before register-widgets.php)

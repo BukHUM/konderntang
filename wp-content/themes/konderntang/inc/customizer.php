@@ -1341,21 +1341,11 @@ function konderntang_dynamic_css()
     <style type="text/css" id="konderntang-dynamic-css">
         :root {
             /* Colors */
-            --konderntang-primary:
-                <?php echo esc_attr($primary_color); ?>
-            ;
-            --konderntang-secondary:
-                <?php echo esc_attr($secondary_color); ?>
-            ;
-            --konderntang-text:
-                <?php echo esc_attr($text_color); ?>
-            ;
-            --konderntang-background:
-                <?php echo esc_attr($background_color); ?>
-            ;
-            --konderntang-link:
-                <?php echo esc_attr($link_color); ?>
-            ;
+            --konderntang-primary: <?php echo esc_attr($primary_color); ?>;
+            --konderntang-secondary: <?php echo esc_attr($secondary_color); ?>;
+            --konderntang-text: <?php echo esc_attr($text_color); ?>;
+            --konderntang-background: <?php echo esc_attr($background_color); ?>;
+            --konderntang-link: <?php echo esc_attr($link_color); ?>;
 
             /* Typography - Fonts */
             --font-body: '<?php echo esc_attr($body_font); ?>', sans-serif;
@@ -1364,63 +1354,31 @@ function konderntang_dynamic_css()
             --font-button: '<?php echo esc_attr($button_font); ?>', sans-serif;
 
             /* Typography - Sizes (Responsive with clamp) */
-            --size-menu:
-                <?php echo esc_attr($menu_size); ?>
-                px;
+            --size-menu: <?php echo esc_attr($menu_size); ?>px;
 
             /* Body: Min 16px, Max user setting */
-            --size-body: clamp(16px, 2vw + 1rem,
-                    <?php echo esc_attr($body_size); ?>
-                    px);
+            --size-body: clamp(16px, 2vw + 1rem, <?php echo esc_attr($body_size); ?>px);
 
             /* Headings: Min 70% of max, slope 4vw + 1rem */
-            --size-h1: clamp(<?php echo max(24, $h1_size * 0.7); ?>px, 4vw + 1rem,
-                    <?php echo esc_attr($h1_size); ?>
-                    px);
-            --size-h2: clamp(<?php echo max(20, $h2_size * 0.75); ?>px, 3.5vw + 1rem,
-                    <?php echo esc_attr($h2_size); ?>
-                    px);
-            --size-h3: clamp(<?php echo max(18, $h3_size * 0.8); ?>px, 3vw + 1rem,
-                    <?php echo esc_attr($h3_size); ?>
-                    px);
-            --size-h4: clamp(<?php echo max(16, $h4_size * 0.9); ?>px, 2vw + 1rem,
-                    <?php echo esc_attr($h4_size); ?>
-                    px);
-            --size-h5: clamp(<?php echo max(14, $h5_size * 0.9); ?>px, 2vw + 1rem,
-                    <?php echo esc_attr($h5_size); ?>
-                    px);
-            --size-h6: clamp(14px, 2vw + 1rem,
-                    <?php echo esc_attr($h6_size); ?>
-                    px);
+            --size-h1: clamp(<?php echo max(24, $h1_size * 0.7); ?>px, 4vw + 1rem, <?php echo esc_attr($h1_size); ?>px);
+            --size-h2: clamp(<?php echo max(20, $h2_size * 0.75); ?>px, 3.5vw + 1rem, <?php echo esc_attr($h2_size); ?>px);
+            --size-h3: clamp(<?php echo max(18, $h3_size * 0.8); ?>px, 3vw + 1rem, <?php echo esc_attr($h3_size); ?>px);
+            --size-h4: clamp(<?php echo max(16, $h4_size * 0.9); ?>px, 2vw + 1rem, <?php echo esc_attr($h4_size); ?>px);
+            --size-h5: clamp(<?php echo max(14, $h5_size * 0.9); ?>px, 2vw + 1rem, <?php echo esc_attr($h5_size); ?>px);
+            --size-h6: clamp(14px, 2vw + 1rem, <?php echo esc_attr($h6_size); ?>px);
 
-            --size-button:
-                <?php echo esc_attr($button_size); ?>
-                px;
-            --size-meta:
-                <?php echo esc_attr($meta_size); ?>
-                px;
+            --size-button: <?php echo esc_attr($button_size); ?>px;
+            --size-meta: <?php echo esc_attr($meta_size); ?>px;
 
             /* Typography - Line Heights */
-            --line-height-body:
-                <?php echo esc_attr($body_line_height); ?>
-            ;
-            --line-height-heading:
-                <?php echo esc_attr($heading_line_height); ?>
-            ;
+            --line-height-body: <?php echo esc_attr($body_line_height); ?>;
+            --line-height-heading: <?php echo esc_attr($heading_line_height); ?>;
 
             /* Typography - Weights */
-            --weight-body:
-                <?php echo esc_attr($body_weight); ?>
-            ;
-            --weight-heading:
-                <?php echo esc_attr($heading_weight); ?>
-            ;
-            --weight-menu:
-                <?php echo esc_attr($menu_weight); ?>
-            ;
-            --weight-button:
-                <?php echo esc_attr($button_weight); ?>
-            ;
+            --weight-body: <?php echo esc_attr($body_weight); ?>;
+            --weight-heading: <?php echo esc_attr($heading_weight); ?>;
+            --weight-menu: <?php echo esc_attr($menu_weight); ?>;
+            --weight-button: <?php echo esc_attr($button_weight); ?>;
         }
 
         /* Body */
@@ -1429,129 +1387,57 @@ function konderntang_dynamic_css()
             font-size: var(--size-body);
             line-height: var(--line-height-body);
             font-weight: var(--weight-body);
-            color:
-                <?php echo esc_attr($text_color); ?>
-            ;
-            background-color:
-                <?php echo esc_attr($background_color); ?>
-            ;
+            color: <?php echo esc_attr($text_color); ?>;
+            background-color: <?php echo esc_attr($background_color); ?>;
         }
 
         /* Headings */
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6,
-        .font-heading {
+        h1, h2, h3, h4, h5, h6, .font-heading {
             font-family: var(--font-heading);
             font-weight: var(--weight-heading);
             line-height: var(--line-height-heading);
-            letter-spacing:
-                <?php echo esc_attr($letter_spacing); ?>
-                px;
-            text-transform:
-                <?php echo esc_attr($text_transform); ?>
-            ;
+            letter-spacing: <?php echo esc_attr($letter_spacing); ?>px;
+            text-transform: <?php echo esc_attr($text_transform); ?>;
         }
 
-        h1 {
-            font-size: var(--size-h1);
-        }
-
-        h2 {
-            font-size: var(--size-h2);
-        }
-
-        h3 {
-            font-size: var(--size-h3);
-        }
-
-        h4 {
-            font-size: var(--size-h4);
-        }
-
-        h5 {
-            font-size: var(--size-h5);
-        }
-
-        h6 {
-            font-size: var(--size-h6);
-        }
+        h1 { font-size: var(--size-h1); }
+        h2 { font-size: var(--size-h2); }
+        h3 { font-size: var(--size-h3); }
+        h4 { font-size: var(--size-h4); }
+        h5 { font-size: var(--size-h5); }
+        h6 { font-size: var(--size-h6); }
 
         /* Menu */
-        .main-navigation a,
-        .primary-menu a,
-        nav a {
+        .main-navigation a, .primary-menu a, nav a, nav button, #primary-menu a, #primary-menu button, .menu a, .menu button {
             font-family: var(--font-menu);
             font-size: var(--size-menu);
             font-weight: var(--weight-menu);
         }
 
         /* Buttons */
-        button,
-        input[type="button"],
-        input[type="reset"],
-        input[type="submit"],
-        .button,
-        .btn,
-        .wp-block-button__link {
+        button, input[type="button"], input[type="reset"], input[type="submit"], .button, .btn, .wp-block-button__link {
             font-family: var(--font-button);
             font-size: var(--size-button);
             font-weight: var(--weight-button);
         }
 
         /* Meta Info (Date, Categories, etc) */
-        .entry-meta,
-        .post-meta,
-        .cat-links,
-        .tags-links,
-        .byline,
-        .posted-on {
+        .entry-meta, .post-meta, .cat-links, .tags-links, .byline, .posted-on {
             font-size: var(--size-meta);
         }
 
         /* Links */
-        a {
-            color:
-                <?php echo esc_attr($link_color); ?>
-            ;
-        }
+        a { color: <?php echo esc_attr($link_color); ?>; }
 
         /* Container */
-        .container {
-            max-width:
-                <?php echo esc_attr($container_width); ?>
-                px;
-        }
+        .container { max-width: <?php echo esc_attr($container_width); ?>px; }
 
         /* Utility Classes */
-        .bg-primary {
-            background-color:
-                <?php echo esc_attr($primary_color); ?>
-                !important;
-        }
-
-        .text-primary {
-            color:
-                <?php echo esc_attr($primary_color); ?>
-                !important;
-        }
-
-        .bg-secondary {
-            background-color:
-                <?php echo esc_attr($secondary_color); ?>
-                !important;
-        }
-
-        .text-secondary {
-            color:
-                <?php echo esc_attr($secondary_color); ?>
-                !important;
-        }
+        .bg-primary { background-color: <?php echo esc_attr($primary_color); ?> !important; }
+        .text-primary { color: <?php echo esc_attr($primary_color); ?> !important; }
+        .bg-secondary { background-color: <?php echo esc_attr($secondary_color); ?> !important; }
+        .text-secondary { color: <?php echo esc_attr($secondary_color); ?> !important; }
     </style>
     <?php
 }
 add_action('wp_head', 'konderntang_dynamic_css', 20);
-

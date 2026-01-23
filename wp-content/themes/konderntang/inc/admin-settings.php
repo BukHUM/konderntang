@@ -228,6 +228,20 @@ function konderntang_save_settings()
     $hero_slider_enabled = isset($_POST['hero_slider_enabled']) ? '1' : '0';
     set_theme_mod('hero_slider_enabled', $hero_slider_enabled);
 
+    if (isset($_POST['hero_slider_source'])) {
+        $source = sanitize_text_field($_POST['hero_slider_source']);
+        if (in_array($source, array('posts', 'banner', 'mixed'), true)) {
+            set_theme_mod('hero_slider_source', $source);
+        }
+    }
+
+    if (isset($_POST['hero_slider_height'])) {
+        $height = absint($_POST['hero_slider_height']);
+        if ($height >= 300 && $height <= 1000) {
+            set_theme_mod('hero_slider_height', $height);
+        }
+    }
+
     if (isset($_POST['hero_slider_posts'])) {
         $hero_slider_posts = absint($_POST['hero_slider_posts']);
         if ($hero_slider_posts >= 1 && $hero_slider_posts <= 10) {
@@ -249,6 +263,57 @@ function konderntang_save_settings()
         $recent_posts_count = absint($_POST['recent_posts_count']);
         if ($recent_posts_count >= 1 && $recent_posts_count <= 20) {
             set_theme_mod('recent_posts_count', $recent_posts_count);
+        }
+    }
+
+    if (isset($_POST['news_section_category'])) {
+        set_theme_mod('news_section_category', absint($_POST['news_section_category']));
+    }
+
+    if (isset($_POST['news_posts_count'])) {
+        $news_posts_count = absint($_POST['news_posts_count']);
+        if ($news_posts_count >= 1 && $news_posts_count <= 20) {
+            set_theme_mod('news_posts_count', $news_posts_count);
+        }
+    }
+
+    // Homepage Sections (Multi-Section)
+    for ($i = 1; $i <= 3; $i++) {
+        $enabled = isset($_POST["homepage_section_{$i}_enabled"]) ? '1' : '0';
+        set_theme_mod("homepage_section_{$i}_enabled", $enabled);
+
+        if (isset($_POST["homepage_section_{$i}_category"])) {
+            set_theme_mod("homepage_section_{$i}_category", absint($_POST["homepage_section_{$i}_category"]));
+        }
+        if (isset($_POST["homepage_section_{$i}_count"])) {
+            $count = absint($_POST["homepage_section_{$i}_count"]);
+            if ($count >= 1 && $count <= 20) {
+                set_theme_mod("homepage_section_{$i}_count", $count);
+            }
+        }
+    }
+
+    // CTA Banner
+    $cta_banner_enabled = isset($_POST['cta_banner_enabled']) ? '1' : '0';
+    set_theme_mod('cta_banner_enabled', $cta_banner_enabled);
+
+    if (isset($_POST['cta_banner_title'])) {
+        set_theme_mod('cta_banner_title', sanitize_text_field($_POST['cta_banner_title']));
+    }
+    if (isset($_POST['cta_banner_subtitle'])) {
+        set_theme_mod('cta_banner_subtitle', sanitize_text_field($_POST['cta_banner_subtitle']));
+    }
+    if (isset($_POST['cta_banner_button_text'])) {
+        set_theme_mod('cta_banner_button_text', sanitize_text_field($_POST['cta_banner_button_text']));
+    }
+    if (isset($_POST['cta_banner_button_url'])) {
+        set_theme_mod('cta_banner_button_url', esc_url_raw($_POST['cta_banner_button_url']));
+    }
+
+    // Layout Order
+    for ($i = 1; $i <= 4; $i++) {
+        if (isset($_POST["homepage_layout_slot_{$i}"])) {
+            set_theme_mod("homepage_layout_slot_{$i}", sanitize_text_field($_POST["homepage_layout_slot_{$i}"]));
         }
     }
 
@@ -744,10 +809,43 @@ function konderntang_settings_page_render()
 
     // Homepage Settings
     $hero_slider_enabled = konderntang_get_option('hero_slider_enabled', true);
+    $hero_slider_source = konderntang_get_option('hero_slider_source', 'banner');
+    $hero_slider_height = konderntang_get_option('hero_slider_height', 500);
     $hero_slider_posts = konderntang_get_option('hero_slider_posts', 4);
     $featured_section_enabled = konderntang_get_option('featured_section_enabled', true);
     $featured_posts_count = konderntang_get_option('featured_posts_count', 3);
+    $featured_posts_count = konderntang_get_option('featured_posts_count', 3);
     $recent_posts_count = konderntang_get_option('recent_posts_count', 6);
+    $news_section_category = konderntang_get_option('news_section_category', 0);
+    $news_posts_count = konderntang_get_option('news_posts_count', 4);
+
+    // Get Multi-Section Options
+    $homepage_sections = array();
+    for ($i = 1; $i <= 3; $i++) {
+        $homepage_sections[$i] = array(
+            'enabled' => konderntang_get_option("homepage_section_{$i}_enabled", false), // Default disabled
+            'category' => konderntang_get_option("homepage_section_{$i}_category", 0),
+            'count' => konderntang_get_option("homepage_section_{$i}_count", 4)
+        );
+    }
+
+    // CTA Banner Settings
+    $cta_banner_enabled = konderntang_get_option('cta_banner_enabled', false);
+    $cta_banner_title = konderntang_get_option('cta_banner_title', esc_html__('Ready to Explore?', 'konderntang'));
+    $cta_banner_subtitle = konderntang_get_option('cta_banner_subtitle', esc_html__('Join our community and discover amazing content!', 'konderntang'));
+    $cta_banner_button_text = konderntang_get_option('cta_banner_button_text', esc_html__('Get Started', 'konderntang'));
+    $cta_banner_button_url = konderntang_get_option('cta_banner_button_url', '#');
+
+    // Layout Order Defaults
+    $homepage_layout_slot_1 = konderntang_get_option('homepage_layout_slot_1', 'section_1');
+    $homepage_layout_slot_2 = konderntang_get_option('homepage_layout_slot_2', 'section_2');
+    $homepage_layout_slot_3 = konderntang_get_option('homepage_layout_slot_3', 'section_3');
+    $homepage_layout_slot_4 = konderntang_get_option('homepage_layout_slot_4', 'cta_banner');
+
+    $newsletter_enabled = konderntang_get_option('newsletter_enabled', true);
+
+    // Get all categories for selection
+    $all_categories = get_categories(array('hide_empty' => false));
     $newsletter_enabled = konderntang_get_option('newsletter_enabled', true);
     $trending_tags_count = konderntang_get_option('trending_tags_count', 10);
     $recently_viewed_enabled = konderntang_get_option('recently_viewed_enabled', true);
@@ -1340,6 +1438,43 @@ function konderntang_settings_page_render()
                                 </tr>
                                 <tr>
                                     <th scope="row">
+                                        <label for="hero_slider_source">
+                                            <span class="dashicons dashicons-database"></span>
+                                            <?php esc_html_e('Slider Source', 'konderntang'); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <select name="hero_slider_source" id="hero_slider_source" class="regular-text">
+                                            <option value="banner" <?php selected($hero_slider_source, 'banner'); ?>>
+                                                <?php esc_html_e('Custom Banners (Recommended)', 'konderntang'); ?></option>
+                                            <option value="posts" <?php selected($hero_slider_source, 'posts'); ?>>
+                                                <?php esc_html_e('Recent Posts', 'konderntang'); ?></option>
+                                            <option value="mixed" <?php selected($hero_slider_source, 'mixed'); ?>>
+                                                <?php esc_html_e('Mixed (Banners + Posts)', 'konderntang'); ?></option>
+                                        </select>
+                                        <p class="description">
+                                            <?php esc_html_e('เลือกแหล่งข้อมูลที่จะแสดงในสไลด์', 'konderntang'); ?>
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="hero_slider_height">
+                                            <span class="dashicons dashicons-arrow-up-alt2"></span>
+                                            <?php esc_html_e('Slider Height (px)', 'konderntang'); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input type="number" name="hero_slider_height" id="hero_slider_height"
+                                            value="<?php echo esc_attr($hero_slider_height); ?>" min="300" max="1000"
+                                            step="10" class="small-text" />
+                                        <p class="description">
+                                            <?php esc_html_e('กำหนดความสูงของสไลด์ (ค่าเริ่มต้น 500px)', 'konderntang'); ?>
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
                                         <label for="hero_slider_posts">
                                             <span class="dashicons dashicons-images-alt2"></span>
                                             <?php esc_html_e('Number of Hero Slides', 'konderntang'); ?>
@@ -1403,7 +1538,186 @@ function konderntang_settings_page_render()
                                         </p>
                                     </td>
                                 </tr>
+                                <?php for ($i = 1; $i <= 3; $i++): ?>
+                                    <tr class="bg-gray-50">
+                                        <th scope="row" colspan="2" class="th-full">
+                                            <h3 class="my-2 border-b pb-2">
+                                                <?php printf(esc_html__('Homepage Section %d', 'konderntang'), $i); ?>
+                                            </h3>
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">
+                                            <label for="homepage_section_<?php echo $i; ?>_enabled">
+                                                <?php printf(esc_html__('Enable Section %d', 'konderntang'), $i); ?>
+                                            </label>
+                                        </th>
+                                        <td>
+                                            <label class="konderntang-toggle">
+                                                <input type="checkbox" name="homepage_section_<?php echo $i; ?>_enabled"
+                                                    value="1" <?php checked($homepage_sections[$i]['enabled'], true); ?> />
+                                                <span class="toggle-slider"></span>
+                                                <span
+                                                    class="toggle-label"><?php esc_html_e('Enable this section', 'konderntang'); ?></span>
+                                            </label>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">
+                                            <label for="homepage_section_<?php echo $i; ?>_category">
+                                                <span class="dashicons dashicons-category"></span>
+                                                <?php printf(esc_html__('Section %d Category', 'konderntang'), $i); ?>
+                                            </label>
+                                        </th>
+                                        <td>
+                                            <select name="homepage_section_<?php echo $i; ?>_category"
+                                                id="homepage_section_<?php echo $i; ?>_category" class="regular-text">
+                                                <option value="0" <?php selected($homepage_sections[$i]['category'], 0); ?>>
+                                                    <?php esc_html_e('-- Select Category (Use Default Title) --', 'konderntang'); ?>
+                                                </option>
+                                                <?php foreach ($all_categories as $cat): ?>
+                                                    <option value="<?php echo esc_attr($cat->term_id); ?>" <?php selected($homepage_sections[$i]['category'], $cat->term_id); ?>>
+                                                        <?php echo esc_html($cat->name); ?> (<?php echo esc_html($cat->count); ?>)
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <p class="description">
+                                                <?php printf(esc_html__('Select a category for Section %d.', 'konderntang'), $i); ?>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">
+                                            <label for="homepage_section_<?php echo $i; ?>_count">
+                                                <span class="dashicons dashicons-grid-view"></span>
+                                                <?php printf(esc_html__('Number of Posts', 'konderntang'), $i); ?>
+                                            </label>
+                                        </th>
+                                        <td>
+                                            <input type="number" name="homepage_section_<?php echo $i; ?>_count"
+                                                id="homepage_section_<?php echo $i; ?>_count"
+                                                value="<?php echo esc_attr($homepage_sections[$i]['count']); ?>" min="1"
+                                                max="20" step="1" class="small-text" />
+                                            <p class="description">
+                                                <?php esc_html_e('Number of posts to display in this section.', 'konderntang'); ?>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr class="konderntang-separator">
+                                        <td colspan="2">
+                                            <hr>
+                                        </td>
+                                    </tr>
+                                <?php endfor; ?>
+
+                                <!-- CTA Banner Settings -->
                                 <tr>
+                                    <th scope="row" colspan="2">
+                                        <h3 class="konderntang-section-title">
+                                            <?php esc_html_e('CTA Banner Settings', 'konderntang'); ?>
+                                        </h3>
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label
+                                            for="cta_banner_enabled"><?php esc_html_e('Enable CTA Banner', 'konderntang'); ?></label>
+                                    </th>
+                                    <td>
+                                        <label class="konderntang-toggle">
+                                            <input type="checkbox" name="cta_banner_enabled" id="cta_banner_enabled"
+                                                value="1" <?php checked($cta_banner_enabled, true); ?>>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label
+                                            for="cta_banner_title"><?php esc_html_e('Banner Title', 'konderntang'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="text" name="cta_banner_title" id="cta_banner_title"
+                                            value="<?php echo esc_attr($cta_banner_title); ?>" class="regular-text">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label
+                                            for="cta_banner_subtitle"><?php esc_html_e('Banner Subtitle', 'konderntang'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="text" name="cta_banner_subtitle" id="cta_banner_subtitle"
+                                            value="<?php echo esc_attr($cta_banner_subtitle); ?>" class="regular-text">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label
+                                            for="cta_banner_button_text"><?php esc_html_e('Button Text', 'konderntang'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="text" name="cta_banner_button_text" id="cta_banner_button_text"
+                                            value="<?php echo esc_attr($cta_banner_button_text); ?>" class="regular-text">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label
+                                            for="cta_banner_button_url"><?php esc_html_e('Button URL', 'konderntang'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="url" name="cta_banner_button_url" id="cta_banner_button_url"
+                                            value="<?php echo esc_url($cta_banner_button_url); ?>" class="regular-text">
+                                    </td>
+                                </tr>
+                                <tr class="konderntang-separator">
+                                    <td colspan="2">
+                                        <hr>
+                                    </td>
+                                </tr>
+
+                                <!-- Layout Order Settings -->
+                                <tr>
+                                    <th scope="row" colspan="2">
+                                        <h3 class="konderntang-section-title">
+                                            <?php esc_html_e('Homepage Layout Order', 'konderntang'); ?>
+                                        </h3>
+                                    </th>
+                                </tr>
+                                <?php
+                                $layout_options = array(
+                                    'none' => esc_html__('-- None --', 'konderntang'),
+                                    'section_1' => esc_html__('Section 1', 'konderntang'),
+                                    'section_2' => esc_html__('Section 2', 'konderntang'),
+                                    'section_3' => esc_html__('Section 3', 'konderntang'),
+                                    'cta_banner' => esc_html__('CTA Banner', 'konderntang'),
+                                );
+                                for ($i = 1; $i <= 4; $i++):
+                                    $current_val = ${"homepage_layout_slot_{$i}"};
+                                    ?>
+                                    <tr>
+                                        <th scope="row">
+                                            <label for="homepage_layout_slot_<?php echo $i; ?>">
+                                                <span class="dashicons dashicons-sort"></span>
+                                                <?php printf(esc_html__('Slot %d', 'konderntang'), $i); ?>
+                                            </label>
+                                        </th>
+                                        <td>
+                                            <select name="homepage_layout_slot_<?php echo $i; ?>"
+                                                id="homepage_layout_slot_<?php echo $i; ?>" class="regular-text">
+                                                <?php foreach ($layout_options as $key => $label): ?>
+                                                    <option value="<?php echo esc_attr($key); ?>" <?php selected($current_val, $key); ?>>
+                                                        <?php echo esc_html($label); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                <?php endfor; ?>
+
+                                <!-- Legacy Newsletter (Optional) -->
+                                <tr class="hidden">
                                     <th scope="row">
                                         <span class="dashicons dashicons-email-alt"></span>
                                         <?php esc_html_e('Newsletter', 'konderntang'); ?>
@@ -1811,7 +2125,8 @@ function konderntang_settings_page_render()
                                             <option value="Times New Roman" <?php selected($typography_body_font, 'Times New Roman'); ?>>Times New Roman</option>
                                         </select>
                                         <p class="description">
-                                            <?php esc_html_e('เลือกฟอนต์สำหรับเนื้อหาหลัก', 'konderntang'); ?></p>
+                                            <?php esc_html_e('เลือกฟอนต์สำหรับเนื้อหาหลัก', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1880,7 +2195,8 @@ function konderntang_settings_page_render()
                                             class="regular-text">
                                             <option value="system-ui" <?php selected($typography_button_font, 'system-ui'); ?>><?php esc_html_e('System Default', 'konderntang'); ?></option>
                                             <option value="inherit" <?php selected($typography_button_font, 'inherit'); ?>>
-                                                <?php esc_html_e('Inherit from Body', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Inherit from Body', 'konderntang'); ?>
+                                            </option>
                                             <option value="Sarabun" <?php selected($typography_button_font, 'Sarabun'); ?>>
                                                 Sarabun (Thai)</option>
                                             <option value="Kanit" <?php selected($typography_button_font, 'Kanit'); ?>>Kanit
@@ -1912,7 +2228,8 @@ function konderntang_settings_page_render()
                                             value="<?php echo esc_attr($typography_body_size); ?>" min="14" max="20"
                                             step="1" class="small-text" />
                                         <p class="description">
-                                            <?php esc_html_e('ขนาดฟอนต์สำหรับข้อความ (14-20px)', 'konderntang'); ?></p>
+                                            <?php esc_html_e('ขนาดฟอนต์สำหรับข้อความ (14-20px)', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1927,7 +2244,8 @@ function konderntang_settings_page_render()
                                             value="<?php echo esc_attr($typography_menu_size); ?>" min="12" max="24"
                                             step="1" class="small-text" />
                                         <p class="description">
-                                            <?php esc_html_e('ขนาดฟอนต์สำหรับเมนู (12-24px)', 'konderntang'); ?></p>
+                                            <?php esc_html_e('ขนาดฟอนต์สำหรับเมนู (12-24px)', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1942,7 +2260,8 @@ function konderntang_settings_page_render()
                                             value="<?php echo esc_attr($typography_h1_size); ?>" min="24" max="48" step="2"
                                             class="small-text" />
                                         <p class="description">
-                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H1 (24-48px)', 'konderntang'); ?></p>
+                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H1 (24-48px)', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1957,7 +2276,8 @@ function konderntang_settings_page_render()
                                             value="<?php echo esc_attr($typography_h2_size); ?>" min="20" max="36" step="1"
                                             class="small-text" />
                                         <p class="description">
-                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H2 (20-36px)', 'konderntang'); ?></p>
+                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H2 (20-36px)', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1972,7 +2292,8 @@ function konderntang_settings_page_render()
                                             value="<?php echo esc_attr($typography_h3_size); ?>" min="18" max="30" step="1"
                                             class="small-text" />
                                         <p class="description">
-                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H3 (18-30px)', 'konderntang'); ?></p>
+                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H3 (18-30px)', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1987,7 +2308,8 @@ function konderntang_settings_page_render()
                                             value="<?php echo esc_attr($typography_h4_size); ?>" min="16" max="24" step="1"
                                             class="small-text" />
                                         <p class="description">
-                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H4 (16-24px)', 'konderntang'); ?></p>
+                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H4 (16-24px)', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -2002,7 +2324,8 @@ function konderntang_settings_page_render()
                                             value="<?php echo esc_attr($typography_h5_size); ?>" min="14" max="20" step="1"
                                             class="small-text" />
                                         <p class="description">
-                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H5 (14-20px)', 'konderntang'); ?></p>
+                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H5 (14-20px)', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -2017,7 +2340,8 @@ function konderntang_settings_page_render()
                                             value="<?php echo esc_attr($typography_h6_size); ?>" min="12" max="18" step="1"
                                             class="small-text" />
                                         <p class="description">
-                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H6 (12-18px)', 'konderntang'); ?></p>
+                                            <?php esc_html_e('ขนาดฟอนต์สำหรับ H6 (12-18px)', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -2032,7 +2356,8 @@ function konderntang_settings_page_render()
                                             value="<?php echo esc_attr($typography_button_size); ?>" min="12" max="20"
                                             step="1" class="small-text" />
                                         <p class="description">
-                                            <?php esc_html_e('ขนาดฟอนต์สำหรับปุ่ม (12-20px)', 'konderntang'); ?></p>
+                                            <?php esc_html_e('ขนาดฟอนต์สำหรับปุ่ม (12-20px)', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                             </table>
@@ -2096,18 +2421,24 @@ function konderntang_settings_page_render()
                                         <select name="typography_body_weight" id="typography_body_weight"
                                             class="regular-text">
                                             <option value="300" <?php selected($typography_body_weight, 300); ?>>
-                                                <?php esc_html_e('Light (300)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Light (300)', 'konderntang'); ?>
+                                            </option>
                                             <option value="400" <?php selected($typography_body_weight, 400); ?>>
-                                                <?php esc_html_e('Normal (400)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Normal (400)', 'konderntang'); ?>
+                                            </option>
                                             <option value="500" <?php selected($typography_body_weight, 500); ?>>
-                                                <?php esc_html_e('Medium (500)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Medium (500)', 'konderntang'); ?>
+                                            </option>
                                             <option value="600" <?php selected($typography_body_weight, 600); ?>>
-                                                <?php esc_html_e('Semi Bold (600)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Semi Bold (600)', 'konderntang'); ?>
+                                            </option>
                                             <option value="700" <?php selected($typography_body_weight, 700); ?>>
-                                                <?php esc_html_e('Bold (700)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Bold (700)', 'konderntang'); ?>
+                                            </option>
                                         </select>
                                         <p class="description">
-                                            <?php esc_html_e('น้ำหนักฟอนต์สำหรับเนื้อหา', 'konderntang'); ?></p>
+                                            <?php esc_html_e('น้ำหนักฟอนต์สำหรับเนื้อหา', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -2121,20 +2452,27 @@ function konderntang_settings_page_render()
                                         <select name="typography_heading_weight" id="typography_heading_weight"
                                             class="regular-text">
                                             <option value="400" <?php selected($typography_heading_weight, 400); ?>>
-                                                <?php esc_html_e('Normal (400)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Normal (400)', 'konderntang'); ?>
+                                            </option>
                                             <option value="500" <?php selected($typography_heading_weight, 500); ?>>
-                                                <?php esc_html_e('Medium (500)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Medium (500)', 'konderntang'); ?>
+                                            </option>
                                             <option value="600" <?php selected($typography_heading_weight, 600); ?>>
-                                                <?php esc_html_e('Semi Bold (600)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Semi Bold (600)', 'konderntang'); ?>
+                                            </option>
                                             <option value="700" <?php selected($typography_heading_weight, 700); ?>>
-                                                <?php esc_html_e('Bold (700)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Bold (700)', 'konderntang'); ?>
+                                            </option>
                                             <option value="800" <?php selected($typography_heading_weight, 800); ?>>
-                                                <?php esc_html_e('Extra Bold (800)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Extra Bold (800)', 'konderntang'); ?>
+                                            </option>
                                             <option value="900" <?php selected($typography_heading_weight, 900); ?>>
-                                                <?php esc_html_e('Black (900)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Black (900)', 'konderntang'); ?>
+                                            </option>
                                         </select>
                                         <p class="description">
-                                            <?php esc_html_e('น้ำหนักฟอนต์สำหรับหัวข้อ', 'konderntang'); ?></p>
+                                            <?php esc_html_e('น้ำหนักฟอนต์สำหรับหัวข้อ', 'konderntang'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -2148,13 +2486,17 @@ function konderntang_settings_page_render()
                                         <select name="typography_menu_weight" id="typography_menu_weight"
                                             class="regular-text">
                                             <option value="400" <?php selected($typography_menu_weight, 400); ?>>
-                                                <?php esc_html_e('Normal (400)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Normal (400)', 'konderntang'); ?>
+                                            </option>
                                             <option value="500" <?php selected($typography_menu_weight, 500); ?>>
-                                                <?php esc_html_e('Medium (500)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Medium (500)', 'konderntang'); ?>
+                                            </option>
                                             <option value="600" <?php selected($typography_menu_weight, 600); ?>>
-                                                <?php esc_html_e('Semi Bold (600)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Semi Bold (600)', 'konderntang'); ?>
+                                            </option>
                                             <option value="700" <?php selected($typography_menu_weight, 700); ?>>
-                                                <?php esc_html_e('Bold (700)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Bold (700)', 'konderntang'); ?>
+                                            </option>
                                         </select>
                                         <p class="description"><?php esc_html_e('น้ำหนักฟอนต์สำหรับเมนู', 'konderntang'); ?>
                                         </p>

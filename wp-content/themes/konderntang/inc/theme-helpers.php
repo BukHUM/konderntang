@@ -83,52 +83,52 @@ function konderntang_get_post_view_count($post_id)
 function konderntang_get_social_profiles()
 {
     $platforms = array(
-        'facebook'  => array(
-            'url'   => konderntang_get_option('social_facebook', ''),
+        'facebook' => array(
+            'url' => konderntang_get_option('social_facebook', ''),
             'label' => __('Facebook', 'konderntang'),
-            'icon'  => 'facebook',
+            'icon' => 'facebook',
             'color' => '#1877f2',
         ),
-        'twitter'   => array(
-            'url'   => konderntang_get_option('social_twitter', ''),
+        'twitter' => array(
+            'url' => konderntang_get_option('social_twitter', ''),
             'label' => __('X (Twitter)', 'konderntang'),
-            'icon'  => 'twitter',
+            'icon' => 'twitter',
             'color' => '#000000',
         ),
         'instagram' => array(
-            'url'   => konderntang_get_option('social_instagram', ''),
+            'url' => konderntang_get_option('social_instagram', ''),
             'label' => __('Instagram', 'konderntang'),
-            'icon'  => 'instagram',
+            'icon' => 'instagram',
             'color' => '#e4405f',
         ),
-        'youtube'   => array(
-            'url'   => konderntang_get_option('social_youtube', ''),
+        'youtube' => array(
+            'url' => konderntang_get_option('social_youtube', ''),
             'label' => __('YouTube', 'konderntang'),
-            'icon'  => 'youtube',
+            'icon' => 'youtube',
             'color' => '#ff0000',
         ),
-        'tiktok'    => array(
-            'url'   => konderntang_get_option('social_tiktok', ''),
+        'tiktok' => array(
+            'url' => konderntang_get_option('social_tiktok', ''),
             'label' => __('TikTok', 'konderntang'),
-            'icon'  => 'tiktok',
+            'icon' => 'tiktok',
             'color' => '#000000',
         ),
-        'line'      => array(
-            'url'   => konderntang_get_option('social_line', ''),
+        'line' => array(
+            'url' => konderntang_get_option('social_line', ''),
             'label' => __('LINE', 'konderntang'),
-            'icon'  => 'line',
+            'icon' => 'line',
             'color' => '#00b900',
         ),
         'pinterest' => array(
-            'url'   => konderntang_get_option('social_pinterest', ''),
+            'url' => konderntang_get_option('social_pinterest', ''),
             'label' => __('Pinterest', 'konderntang'),
-            'icon'  => 'pinterest',
+            'icon' => 'pinterest',
             'color' => '#bd081c',
         ),
-        'linkedin'  => array(
-            'url'   => konderntang_get_option('social_linkedin', ''),
+        'linkedin' => array(
+            'url' => konderntang_get_option('social_linkedin', ''),
             'label' => __('LinkedIn', 'konderntang'),
-            'icon'  => 'linkedin',
+            'icon' => 'linkedin',
             'color' => '#0a66c2',
         ),
     );
@@ -147,11 +147,11 @@ function konderntang_get_social_profiles()
 function konderntang_get_social_settings()
 {
     return array(
-        'show_header'   => (bool) konderntang_get_option('social_show_header', false),
-        'show_footer'   => (bool) konderntang_get_option('social_show_footer', true),
-        'icon_style'    => konderntang_get_option('social_icon_style', 'default'),
-        'icon_size'     => konderntang_get_option('social_icon_size', 'medium'),
-        'open_new_tab'  => (bool) konderntang_get_option('social_open_new_tab', true),
+        'show_header' => (bool) konderntang_get_option('social_show_header', false),
+        'show_footer' => (bool) konderntang_get_option('social_show_footer', true),
+        'icon_style' => konderntang_get_option('social_icon_style', 'default'),
+        'icon_size' => konderntang_get_option('social_icon_size', 'medium'),
+        'open_new_tab' => (bool) konderntang_get_option('social_open_new_tab', true),
     );
 }
 
@@ -165,13 +165,13 @@ function konderntang_get_social_settings()
 function konderntang_render_social_icons($location = 'footer', $args = array())
 {
     $profiles = konderntang_get_social_profiles();
-    
+
     if (empty($profiles)) {
         return;
     }
 
     $settings = konderntang_get_social_settings();
-    
+
     // Check if we should display based on location
     if ($location === 'header' && !$settings['show_header']) {
         return;
@@ -188,7 +188,7 @@ function konderntang_render_social_icons($location = 'footer', $args = array())
     $size_class = 'konderntang-social-size-' . esc_attr($settings['icon_size']);
 
     echo '<div class="konderntang-social-icons ' . esc_attr($style_class) . ' ' . esc_attr($size_class) . ' konderntang-social-' . esc_attr($location) . '">';
-    
+
     foreach ($profiles as $platform => $data) {
         $icon_class = 'konderntang-social-icon konderntang-social-icon-' . esc_attr($platform);
         printf(
@@ -203,6 +203,6 @@ function konderntang_render_social_icons($location = 'footer', $args = array())
             esc_attr($data['color'])
         );
     }
-    
+
     echo '</div>';
 }
