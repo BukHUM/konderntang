@@ -9,6 +9,7 @@
 // Handle arguments
 $posts_count = isset($posts_count) ? absint($posts_count) : absint(konderntang_get_option('recent_posts_count', 6));
 $category_id = isset($category) ? absint($category) : 0;
+$taxonomy_type = isset($taxonomy_type) ? $taxonomy_type : 'category'; // Default to category for backward compatibility
 $title = isset($title) ? $title : esc_html__('บทความล่าสุด', 'konderntang');
 $subtitle = isset($subtitle) ? $subtitle : '';
 $show_link = isset($show_link) ? $show_link : true;
@@ -25,8 +26,38 @@ $args = array(
 
 $category_link = '';
 if (!empty($category_id)) {
-    $args['cat'] = $category_id;
-    $category_link = get_category_link($category_id);
+    // Handle different taxonomy types
+    if ($taxonomy_type === 'category') {
+        $args['cat'] = $category_id;
+        $category_link = get_category_link($category_id);
+    } elseif ($taxonomy_type === 'destination') {
+        $args['tax_query'] = array(
+            array(
+                'taxonomy' => 'destination',
+                'field' => 'term_id',
+                'terms' => $category_id,
+            ),
+        );
+        // Include both posts and travel_guide post types for destinations
+        $args['post_type'] = array('post', 'travel_guide');
+        $category_link = get_term_link($category_id, 'destination');
+    } elseif ($taxonomy_type === 'travel_type') {
+        $args['tax_query'] = array(
+            array(
+                'taxonomy' => 'travel_type',
+                'field' => 'term_id',
+                'terms' => $category_id,
+            ),
+        );
+        // Include both posts and travel_guide post types for travel types
+        $args['post_type'] = array('post', 'travel_guide');
+        $category_link = get_term_link($category_id, 'travel_type');
+    }
+
+    // Handle WP_Error from get_term_link
+    if (is_wp_error($category_link)) {
+        $category_link = '';
+    }
 }
 
 $recent_posts = get_posts($args);

@@ -154,8 +154,65 @@
         updateBreadcrumb(currentPage);
 
         // Initialize social share features
+        // Initialize social share features
         initShareCopyLink();
         initSharePopup();
+
+        // Initialize Language Switcher
+        initLanguageSwitcher();
     });
+
+    // Language Switcher Logic
+    function initLanguageSwitcher() {
+        const switcherButtons = document.querySelectorAll('.konderntang-language-button');
+
+        switcherButtons.forEach(button => {
+            button.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const uniqueId = this.id.replace('konderntang-language-button-', '');
+                const modalId = 'konderntang-language-modal-' + uniqueId;
+                const dropdownId = 'konderntang-language-dropdown-' + uniqueId;
+
+                const modal = document.getElementById(modalId);
+                const dropdown = document.getElementById(dropdownId);
+
+                // Handle Modal
+                if (modal) {
+                    modal.style.display = 'flex';
+                    document.body.style.overflow = 'hidden'; // Prevent scrolling
+                }
+
+                // Handle Dropdown (Desktop fallback or alternative style)
+                if (dropdown) {
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !isExpanded);
+                    dropdown.classList.toggle('show');
+                }
+            });
+        });
+
+        // Close handlers for Modals
+        const closeButtons = document.querySelectorAll('[data-close-modal]');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const modal = this.closest('.konderntang-language-modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.konderntang-language-switcher')) {
+                const dropdowns = document.querySelectorAll('.konderntang-language-dropdown.show');
+                dropdowns.forEach(d => d.classList.remove('show'));
+
+                const buttons = document.querySelectorAll('.konderntang-language-button[aria-expanded="true"]');
+                buttons.forEach(b => b.setAttribute('aria-expanded', 'false'));
+            }
+        });
+    }
 
 })();

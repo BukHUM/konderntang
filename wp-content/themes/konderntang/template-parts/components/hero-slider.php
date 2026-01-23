@@ -21,24 +21,35 @@ $hero_height = konderntang_get_option('hero_slider_height', 500);
 $limit = konderntang_get_option('hero_slider_posts', 4);
 $posts_array = array();
 
+// Get current language for Polylang filtering
+$current_lang = function_exists('pll_current_language') ? pll_current_language() : '';
+
 if ($hero_source === 'posts') {
     // 1. Posts Only
-    $q_posts = new WP_Query(array(
+    $query_args = array(
         'post_type' => 'post',
         'posts_per_page' => $limit,
         'post_status' => 'publish',
         'ignore_sticky_posts' => 1
-    ));
+    );
+    if ($current_lang) {
+        $query_args['lang'] = $current_lang;
+    }
+    $q_posts = new WP_Query($query_args);
     $posts_array = $q_posts->posts;
 
 } elseif ($hero_source === 'mixed') {
     // 2. Mixed: Banners FIRST, then Posts
     // Fetch all banners first (or up to limit)
-    $q_banners = new WP_Query(array(
+    $query_args = array(
         'post_type' => 'hero_banner',
         'posts_per_page' => $limit,
         'post_status' => 'publish'
-    ));
+    );
+    if ($current_lang) {
+        $query_args['lang'] = $current_lang;
+    }
+    $q_banners = new WP_Query($query_args);
 
     $banner_count = count($q_banners->posts);
     $posts_array = $q_banners->posts;
@@ -46,23 +57,31 @@ if ($hero_source === 'posts') {
     // If we still have room, fetch posts
     if ($banner_count < $limit) {
         $remaining = $limit - $banner_count;
-        $q_posts = new WP_Query(array(
+        $query_args = array(
             'post_type' => 'post',
             'posts_per_page' => $remaining,
             'post_status' => 'publish',
             'ignore_sticky_posts' => 1
-        ));
+        );
+        if ($current_lang) {
+            $query_args['lang'] = $current_lang;
+        }
+        $q_posts = new WP_Query($query_args);
         // Merge
         $posts_array = array_merge($posts_array, $q_posts->posts);
     }
 
 } else {
     // 3. Banner Only (default)
-    $q_banners = new WP_Query(array(
+    $query_args = array(
         'post_type' => 'hero_banner',
         'posts_per_page' => -1,
         'post_status' => 'publish'
-    ));
+    );
+    if ($current_lang) {
+        $query_args['lang'] = $current_lang;
+    }
+    $q_banners = new WP_Query($query_args);
     $posts_array = $q_banners->posts;
 }
 

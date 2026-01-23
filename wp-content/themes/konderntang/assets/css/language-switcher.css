@@ -183,6 +183,7 @@
         opacity: 0;
         transform: translateY(-24px) scale(0.96);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -443,8 +444,15 @@
 }
 
 @keyframes suggestedPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.4); }
-    50% { box-shadow: 0 0 0 4px rgba(250, 204, 21, 0); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 4px rgba(250, 204, 21, 0);
+    }
 }
 
 .konderntang-language-modal-list .konderntang-language-flag {
@@ -551,6 +559,7 @@
             opacity: 0;
             transform: translateY(100%);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -602,6 +611,7 @@
    Print Styles
    ======================================== */
 @media print {
+
     .konderntang-language-switcher,
     .konderntang-language-modal {
         display: none !important;
@@ -612,6 +622,7 @@
    Reduced Motion
    ======================================== */
 @media (prefers-reduced-motion: reduce) {
+
     .konderntang-language-modal-container,
     .konderntang-language-dropdown,
     .konderntang-language-modal-list .konderntang-language-item.suggested {

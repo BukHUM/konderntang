@@ -282,6 +282,14 @@ function konderntang_save_settings()
         $enabled = isset($_POST["homepage_section_{$i}_enabled"]) ? '1' : '0';
         set_theme_mod("homepage_section_{$i}_enabled", $enabled);
 
+        // Save taxonomy type (category, destination, or travel_type)
+        if (isset($_POST["homepage_section_{$i}_taxonomy_type"])) {
+            $taxonomy_type = sanitize_text_field($_POST["homepage_section_{$i}_taxonomy_type"]);
+            if (in_array($taxonomy_type, array('category', 'destination', 'travel_type'), true)) {
+                set_theme_mod("homepage_section_{$i}_taxonomy_type", $taxonomy_type);
+            }
+        }
+
         if (isset($_POST["homepage_section_{$i}_category"])) {
             set_theme_mod("homepage_section_{$i}_category", absint($_POST["homepage_section_{$i}_category"]));
         }
@@ -633,6 +641,24 @@ function konderntang_save_settings()
         set_theme_mod('share_label', sanitize_text_field($_POST['share_label']));
     }
 
+    // Search Settings
+    if (isset($_POST['search_popular_terms'])) {
+        $popular_terms = sanitize_textarea_field($_POST['search_popular_terms']);
+        // Convert to array (one term per line)
+        $terms_array = array_filter(array_map('trim', explode("\n", $popular_terms)));
+        set_theme_mod('search_popular_terms', $terms_array);
+    } else {
+        delete_theme_mod('search_popular_terms');
+    }
+
+    if (isset($_POST['search_synonyms_json'])) {
+        $synonyms_json = stripslashes($_POST['search_synonyms_json']);
+        $synonyms_data = json_decode($synonyms_json, true);
+        if (is_array($synonyms_data)) {
+            update_option('konderntang_search_synonyms', $synonyms_data);
+        }
+    }
+
     // Advanced Settings
     if (isset($_POST['advanced_custom_css'])) {
         set_theme_mod('advanced_custom_css', wp_strip_all_tags($_POST['advanced_custom_css']));
@@ -738,6 +764,11 @@ function konderntang_settings_page_render()
             'icon' => 'dashicons-share',
             'description' => esc_html__('Social profiles and sharing', 'konderntang'),
         ),
+        'search' => array(
+            'label' => esc_html__('Search', 'konderntang'),
+            'icon' => 'dashicons-search',
+            'description' => esc_html__('Search settings and popular terms', 'konderntang'),
+        ),
         'cookie' => array(
             'label' => esc_html__('Cookie Consent', 'konderntang'),
             'icon' => 'dashicons-privacy',
@@ -824,6 +855,7 @@ function konderntang_settings_page_render()
     for ($i = 1; $i <= 3; $i++) {
         $homepage_sections[$i] = array(
             'enabled' => konderntang_get_option("homepage_section_{$i}_enabled", false), // Default disabled
+            'taxonomy_type' => konderntang_get_option("homepage_section_{$i}_taxonomy_type", 'category'), // Default to category for backward compatibility
             'category' => konderntang_get_option("homepage_section_{$i}_category", 0),
             'count' => konderntang_get_option("homepage_section_{$i}_count", 4)
         );
@@ -846,6 +878,23 @@ function konderntang_settings_page_render()
 
     // Get all categories for selection
     $all_categories = get_categories(array('hide_empty' => false));
+
+    // Get custom taxonomies for homepage sections
+    $all_destinations = get_terms(array(
+        'taxonomy' => 'destination',
+        'hide_empty' => false
+    ));
+    if (is_wp_error($all_destinations)) {
+        $all_destinations = array();
+    }
+
+    $all_travel_types = get_terms(array(
+        'taxonomy' => 'travel_type',
+        'hide_empty' => false
+    ));
+    if (is_wp_error($all_travel_types)) {
+        $all_travel_types = array();
+    }
     $newsletter_enabled = konderntang_get_option('newsletter_enabled', true);
     $trending_tags_count = konderntang_get_option('trending_tags_count', 10);
     $recently_viewed_enabled = konderntang_get_option('recently_viewed_enabled', true);
@@ -1116,10 +1165,190 @@ function konderntang_settings_page_render()
                                     </td>
                                 </tr>
 
+                                <?php if ($header_show_search): ?>
+                                    <!-- Search Configuration Sub-section -->
+                                    <tr>
+                                        <th scope="row" colspan="2">
+                                            <h4
+                                                style="margin: 15px 0 10px; padding-bottom: 5px; border-bottom: 1px dashed #e2e8f0; color: #64748b;">
+                                                <span class="dashicons dashicons-search"
+                                                    style="font-size: 16px; margin-right: 5px;"></span>
+                                                <?php esc_html_e('Search Configuration', 'konderntang'); ?>
+                                            </h4>
+                                        </th>
+                                    </tr>
+
+                                    <?php
+                                    // Get Synonyms
+                                    $synonyms = get_option('konderntang_search_synonyms', array());
+                                    $synonyms_json = json_encode($synonyms) ?: '[]';
+
+                                    // Get Popular Terms
+                                    $search_popular_terms = konderntang_get_option('search_popular_terms', array());
+                                    $popular_terms_text = is_array($search_popular_terms) ? implode("\n", $search_popular_terms) : '';
+                                    ?>
+
+                                    <!-- Search Analytics -->
+                                    <tr>
+                                        <th scope="row">
+                                            <span class="dashicons dashicons-chart-area"></span>
+                                            <?php esc_html_e('Search Analytics', 'konderntang'); ?>
+                                        </th>
+                                        <td>
+                                            <div class="konderntang-info-box" style="margin-top: 0;">
+                                                <p><?php esc_html_e('Track what users are searching for and optimize your content.', 'konderntang'); ?>
+                                                </p>
+                                                <?php
+                                                // Get Analytics Data
+                                                $top_searches_day = function_exists('konderntang_get_top_searches') ? konderntang_get_top_searches(5, 'today') : array();
+                                                ?>
+                                                <?php if (!empty($top_searches_day)): ?>
+                                                    <div style="margin-top: 10px;">
+                                                        <strong><?php esc_html_e('Today\'s Top Searches:', 'konderntang'); ?></strong>
+                                                        <ul style="list-style: disc; margin-left: 20px; margin-top: 5px;">
+                                                            <?php foreach ($top_searches_day as $item): ?>
+                                                                <li><?php echo esc_html($item->term) . ' (' . absint($item->count) . ')'; ?>
+                                                                </li>
+                                                            <?php endforeach; ?>
+                                                        </ul>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <p style="margin-top: 5px; font-style: italic;">
+                                                        <?php esc_html_e('No searches recorded today.', 'konderntang'); ?>
+                                                    </p>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Popular Terms -->
+                                    <tr>
+                                        <th scope="row">
+                                            <label for="search_popular_terms">
+                                                <span class="dashicons dashicons-fire"></span>
+                                                <?php esc_html_e('Popular Search Terms', 'konderntang'); ?>
+                                            </label>
+                                        </th>
+                                        <td>
+                                            <textarea name="search_popular_terms" id="search_popular_terms" rows="4"
+                                                class="large-text"
+                                                placeholder="<?php esc_attr_e('เที่ยวภูเก็ต&#10;เที่ยวเชียงใหม่&#10;โรงแรมกรุงเทพ&#10;ตั๋วเครื่องบิน', 'konderntang'); ?>"><?php echo esc_textarea($popular_terms_text); ?></textarea>
+                                            <p class="description">
+                                                <?php esc_html_e('แสดงคำค้นหายอดนิยมในหน้าต่างค้นหา (หนึ่งบรรทัดต่อหนึ่งคำ)', 'konderntang'); ?>
+                                            </p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Synonyms -->
+                                    <tr>
+                                        <th scope="row">
+                                            <label for="search_synonyms">
+                                                <span class="dashicons dashicons-randomize"></span>
+                                                <?php esc_html_e('Search Synonyms', 'konderntang'); ?>
+                                            </label>
+                                        </th>
+                                        <td>
+                                            <input type="hidden" name="search_synonyms_json" id="search_synonyms_json"
+                                                value="<?php echo esc_attr($synonyms_json); ?>">
+
+                                            <div id="synonyms-container"
+                                                style="background: #f9f9f9; padding: 15px; border: 1px solid #ccd0d4; border-radius: 4px;">
+                                                <table class="widefat striped" id="synonyms-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="width: 30%;">Keyword</th>
+                                                            <th>Synonyms (comma separated)</th>
+                                                            <th style="width: 50px;"></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="synonyms-list">
+                                                        <!-- JS will populate this -->
+                                                    </tbody>
+                                                </table>
+                                                <button type="button" class="button button-secondary" id="add-synonym-btn"
+                                                    style="margin-top: 10px;">
+                                                    <span class="dashicons dashicons-plus"></span> Add Synonym
+                                                </button>
+                                            </div>
+
+                                            <p class="description" style="margin-top: 10px;">
+                                                <?php esc_html_e('Map keywords generally used to specific synonyms. Example: "bkk" -> "bangkok, กรุงเทพ"', 'konderntang'); ?>
+                                            </p>
+
+                                            <script>
+                                                jQuery(document).ready(function ($) {
+                                                    // Only run if the element exists
+                                                    if ($('#synonyms-list').length === 0) return;
+
+                                                    var rawData = '<?php echo $synonyms_json; ?>';
+                                                    var synonymsData = [];
+                                                    try {
+                                                        synonymsData = JSON.parse(rawData);
+                                                    } catch (e) {
+                                                        synonymsData = [];
+                                                    }
+
+                                                    const container = $('#synonyms-list');
+
+                                                    // Render existing rows
+                                                    renderRows();
+
+                                                    function renderRows() {
+                                                        container.empty();
+                                                        if (!Array.isArray(synonymsData) || synonymsData.length === 0) {
+                                                            container.append('<tr><td colspan="3" class="text-center italic">No synonyms defined.</td></tr>');
+                                                        } else {
+                                                            synonymsData.forEach((item, index) => {
+                                                                addRow(item, index);
+                                                            });
+                                                        }
+                                                        updateJson();
+                                                    }
+
+                                                    function addRow(item, index) {
+                                                        const row = `
+                                                        <tr data-index="${index}">
+                                                            <td><input type="text" class="widefat synonym-key" value="${item.keyword}" placeholder="e.g. bkk"></td>
+                                                            <td><input type="text" class="widefat synonym-val" value="${item.synonyms}" placeholder="e.g. bangkok"></td>
+                                                            <td><button type="button" class="button-link delete-synonym" style="color: #d63638;"><span class="dashicons dashicons-trash"></span></button></td>
+                                                        </tr>
+                                                    `;
+                                                        container.append(row);
+                                                    }
+
+                                                    $('#add-synonym-btn').click(function () {
+                                                        synonymsData.push({ keyword: '', synonyms: '' });
+                                                        renderRows();
+                                                    });
+
+                                                    $(document).on('click', '.delete-synonym', function () {
+                                                        const index = $(this).closest('tr').data('index');
+                                                        synonymsData.splice(index, 1);
+                                                        renderRows();
+                                                    });
+
+                                                    $(document).on('change keyup', '.synonym-key, .synonym-val', function () {
+                                                        const row = $(this).closest('tr');
+                                                        const index = row.data('index');
+                                                        const key = row.find('.synonym-key').val();
+                                                        const val = row.find('.synonym-val').val();
+
+                                                        synonymsData[index] = { keyword: key, synonyms: val };
+                                                        updateJson();
+                                                    });
+
+                                                    function updateJson() {
+                                                        $('#search_synonyms_json').val(JSON.stringify(synonymsData));
+                                                    }
+                                                });
+                                            </script>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
                                 <?php
-                                // Check if Polylang is active
                                 $polylang_active = function_exists('pll_the_languages');
-                                $polylang_has_languages = $polylang_active && !empty($polylang_languages) && count($polylang_languages) >= 2;
+                                $polylang_has_languages = $polylang_active && !empty($polylang_languages) &&
+                                    count($polylang_languages) >= 2;
                                 ?>
 
                                 <!-- Polylang Status Notice -->
@@ -1446,11 +1675,14 @@ function konderntang_settings_page_render()
                                     <td>
                                         <select name="hero_slider_source" id="hero_slider_source" class="regular-text">
                                             <option value="banner" <?php selected($hero_slider_source, 'banner'); ?>>
-                                                <?php esc_html_e('Custom Banners (Recommended)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Custom Banners (Recommended)', 'konderntang'); ?>
+                                            </option>
                                             <option value="posts" <?php selected($hero_slider_source, 'posts'); ?>>
-                                                <?php esc_html_e('Recent Posts', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Recent Posts', 'konderntang'); ?>
+                                            </option>
                                             <option value="mixed" <?php selected($hero_slider_source, 'mixed'); ?>>
-                                                <?php esc_html_e('Mixed (Banners + Posts)', 'konderntang'); ?></option>
+                                                <?php esc_html_e('Mixed (Banners + Posts)', 'konderntang'); ?>
+                                            </option>
                                         </select>
                                         <p class="description">
                                             <?php esc_html_e('เลือกแหล่งข้อมูลที่จะแสดงในสไลด์', 'konderntang'); ?>
@@ -1566,24 +1798,79 @@ function konderntang_settings_page_render()
                                         <th scope="row">
                                             <label for="homepage_section_<?php echo $i; ?>_category">
                                                 <span class="dashicons dashicons-category"></span>
-                                                <?php printf(esc_html__('Section %d Category', 'konderntang'), $i); ?>
+                                                <?php printf(esc_html__('Section %d Content Source', 'konderntang'), $i); ?>
                                             </label>
                                         </th>
                                         <td>
+                                            <?php
+                                            // Get current values
+                                            $current_taxonomy_type = $homepage_sections[$i]['taxonomy_type'];
+                                            $current_term_id = $homepage_sections[$i]['category'];
+                                            ?>
                                             <select name="homepage_section_<?php echo $i; ?>_category"
-                                                id="homepage_section_<?php echo $i; ?>_category" class="regular-text">
-                                                <option value="0" <?php selected($homepage_sections[$i]['category'], 0); ?>>
-                                                    <?php esc_html_e('-- Select Category (Use Default Title) --', 'konderntang'); ?>
+                                                id="homepage_section_<?php echo $i; ?>_category"
+                                                class="regular-text homepage-section-taxonomy-select"
+                                                data-section="<?php echo $i; ?>">
+                                                <option value="0" data-taxonomy-type="category" <?php selected($current_term_id, 0); ?>>
+                                                    <?php esc_html_e('-- Select Content Source --', 'konderntang'); ?>
                                                 </option>
-                                                <?php foreach ($all_categories as $cat): ?>
-                                                    <option value="<?php echo esc_attr($cat->term_id); ?>" <?php selected($homepage_sections[$i]['category'], $cat->term_id); ?>>
-                                                        <?php echo esc_html($cat->name); ?> (<?php echo esc_html($cat->count); ?>)
-                                                    </option>
-                                                <?php endforeach; ?>
+
+                                                <!-- Categories -->
+                                                <optgroup label="<?php esc_attr_e('Categories', 'konderntang'); ?>">
+                                                    <?php foreach ($all_categories as $cat): ?>
+                                                        <option value="<?php echo esc_attr($cat->term_id); ?>"
+                                                            data-taxonomy-type="category" <?php selected($current_taxonomy_type === 'category' && $current_term_id === $cat->term_id); ?>>
+                                                            <?php echo esc_html($cat->name); ?>
+                                                            (<?php echo esc_html($cat->count); ?>)
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </optgroup>
+
+                                                <!-- Destinations -->
+                                                <?php if (!empty($all_destinations)): ?>
+                                                    <optgroup label="<?php esc_attr_e('Destinations', 'konderntang'); ?>">
+                                                        <?php foreach ($all_destinations as $dest): ?>
+                                                            <option value="<?php echo esc_attr($dest->term_id); ?>"
+                                                                data-taxonomy-type="destination" <?php selected($current_taxonomy_type === 'destination' && $current_term_id === $dest->term_id); ?>>
+                                                                <?php echo esc_html($dest->name); ?>
+                                                                (<?php echo esc_html($dest->count); ?>)
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </optgroup>
+                                                <?php endif; ?>
+
+                                                <!-- Travel Types -->
+                                                <?php if (!empty($all_travel_types)): ?>
+                                                    <optgroup label="<?php esc_attr_e('Travel Types', 'konderntang'); ?>">
+                                                        <?php foreach ($all_travel_types as $type): ?>
+                                                            <option value="<?php echo esc_attr($type->term_id); ?>"
+                                                                data-taxonomy-type="travel_type" <?php selected($current_taxonomy_type === 'travel_type' && $current_term_id === $type->term_id); ?>>
+                                                                <?php echo esc_html($type->name); ?>
+                                                                (<?php echo esc_html($type->count); ?>)
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </optgroup>
+                                                <?php endif; ?>
                                             </select>
+
+                                            <!-- Hidden field to store taxonomy type -->
+                                            <input type="hidden" name="homepage_section_<?php echo $i; ?>_taxonomy_type"
+                                                id="homepage_section_<?php echo $i; ?>_taxonomy_type"
+                                                value="<?php echo esc_attr($current_taxonomy_type); ?>">
+
                                             <p class="description">
-                                                <?php printf(esc_html__('Select a category for Section %d.', 'konderntang'), $i); ?>
+                                                <?php printf(esc_html__('Select a content source (Category, Destination, or Travel Type) for Section %d.', 'konderntang'), $i); ?>
                                             </p>
+
+                                            <script type="text/javascript">
+                                                jQuery(document).ready(function ($) {
+                                                    $('#homepage_section_<?php echo $i; ?>_category').on('change', function () {
+                                                        var selectedOption = $(this).find('option:selected');
+                                                        var taxonomyType = selectedOption.data('taxonomy-type');
+                                                        $('#homepage_section_<?php echo $i; ?>_taxonomy_type').val(taxonomyType);
+                                                    });
+                                                });
+                                            </script>
                                         </td>
                                     </tr>
                                     <tr>

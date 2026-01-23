@@ -76,10 +76,27 @@ function konderntang_scripts()
         );
     }
 
+    // Pagination Styles (load globally or on archive/index/search)
+    wp_enqueue_style(
+        'konderntang-pagination',
+        KONDERN_THEME_URI . '/assets/css/pagination.css',
+        array('konderntang-style'),
+        KONDERN_THEME_VERSION
+    );
+
     // Main JavaScript
     wp_enqueue_script(
         'konderntang-main',
         KONDERN_THEME_URI . '/assets/js/main.js',
+        array(),
+        KONDERN_THEME_VERSION,
+        true
+    );
+
+    // Search Modal JavaScript
+    wp_enqueue_script(
+        'konderntang-search-modal',
+        KONDERN_THEME_URI . '/assets/js/search-modal.js',
         array(),
         KONDERN_THEME_VERSION,
         true

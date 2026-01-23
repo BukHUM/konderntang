@@ -43,6 +43,7 @@ require_once KONDERN_THEME_DIR . '/inc/custom-fields.php';
 require_once KONDERN_THEME_DIR . '/inc/ajax-handlers.php';
 require_once KONDERN_THEME_DIR . '/inc/user-behavior-tracker.php';
 require_once KONDERN_THEME_DIR . '/inc/recommendation-engine.php';
+require_once KONDERN_THEME_DIR . '/inc/search-analytics.php';
 require_once KONDERN_THEME_DIR . '/inc/google-analytics.php';
 require_once KONDERN_THEME_DIR . '/inc/performance.php';
 require_once KONDERN_THEME_DIR . '/inc/seo.php';

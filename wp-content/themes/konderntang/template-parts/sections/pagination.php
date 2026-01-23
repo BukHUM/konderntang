@@ -8,8 +8,10 @@
 
 the_posts_pagination(
     array(
-        'mid_size'  => 2,
-        'prev_text' => esc_html__( '&laquo; Previous', 'konderntang' ),
-        'next_text' => esc_html__( 'Next &raquo;', 'konderntang' ),
+        'mid_size' => 2,
+        'prev_text' => '<i class="ph ph-arrow-left"></i> ' . esc_html__('Prev', 'konderntang'),
+        'next_text' => esc_html__('Next', 'konderntang') . ' <i class="ph ph-arrow-right"></i>',
+        'screen_reader_text' => ' ', // Hide the H2 "Posts navigation"
+        'class' => 'konderntang-pagination',
     )
 );

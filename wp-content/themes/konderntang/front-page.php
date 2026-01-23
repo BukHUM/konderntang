@@ -69,19 +69,30 @@ get_header();
                 $sec_num = intval(str_replace('section_', '', $slot_component));
 
                 $sec_enabled = konderntang_get_option("homepage_section_{$sec_num}_enabled", false);
+                $sec_taxonomy_type = konderntang_get_option("homepage_section_{$sec_num}_taxonomy_type", 'category');
                 $sec_category_id = konderntang_get_option("homepage_section_{$sec_num}_category", 0);
                 $sec_posts_count = konderntang_get_option("homepage_section_{$sec_num}_count", 4);
 
                 if ($sec_enabled && !empty($sec_category_id)) {
                     $section_args = array(
                         'category' => $sec_category_id,
+                        'taxonomy_type' => $sec_taxonomy_type,
                         'posts_count' => $sec_posts_count,
                         'title' => '',
                         'subtitle' => '',
                         'accent_color' => 'border-primary'
                     );
 
-                    $term = get_term($sec_category_id, 'category');
+                    // Get term based on taxonomy type
+                    $term = null;
+                    if ($sec_taxonomy_type === 'category') {
+                        $term = get_term($sec_category_id, 'category');
+                    } elseif ($sec_taxonomy_type === 'destination') {
+                        $term = get_term($sec_category_id, 'destination');
+                    } elseif ($sec_taxonomy_type === 'travel_type') {
+                        $term = get_term($sec_category_id, 'travel_type');
+                    }
+
                     if (!is_wp_error($term) && $term) {
                         $section_args['title'] = $term->name;
                         if (!empty($term->description)) {

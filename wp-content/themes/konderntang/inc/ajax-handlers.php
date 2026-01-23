@@ -63,35 +63,65 @@ function konderntang_search_autocomplete()
     check_ajax_referer('konderntang-nonce', 'nonce');
 
     $search_term = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+    $post_type = isset($_POST['post_type']) ? $_POST['post_type'] : 'any';
 
     if (strlen($search_term) < 2) {
         wp_send_json_error(array('message' => esc_html__('Search term too short.', 'konderntang')));
     }
 
+    // Apply Synonyms
+    $search_term = konderntang_apply_search_synonyms($search_term);
+
     $args = array(
-        'post_type' => 'post',
-        'posts_per_page' => 5,
+        'post_type' => $post_type,
+        'posts_per_page' => 8,
         's' => $search_term,
         'post_status' => 'publish',
     );
 
     $query = new WP_Query($args);
 
+    // Log Search Analytics
+    if (function_exists('konderntang_log_search')) {
+        konderntang_log_search($search_term, $query->found_posts, 'ajax');
+    }
+
     $results = array();
     if ($query->have_posts()) {
         while ($query->have_posts()) {
             $query->the_post();
+
+            // Get post type label
+            $post_type_obj = get_post_type_object(get_post_type());
+            $type_label = $post_type_obj ? $post_type_obj->labels->singular_name : get_post_type();
+
+            // Get excerpt or trim content
+            $excerpt = get_the_excerpt();
+            if (empty($excerpt)) {
+                $excerpt = wp_trim_words(get_the_content(), 20, '...');
+            }
+
             $results[] = array(
                 'id' => get_the_ID(),
                 'title' => get_the_title(),
                 'url' => get_permalink(),
                 'image' => has_post_thumbnail() ? get_the_post_thumbnail_url(get_the_ID(), 'thumbnail') : '',
+                'excerpt' => $excerpt,
+                'type' => get_post_type(),
+                'type_label' => $type_label,
+                'date' => get_the_date('j M Y'),
+                'original_term' => $_POST['search'], // return original term for UI
+                'actual_term' => $search_term // return actual term used
             );
         }
         wp_reset_postdata();
     }
 
-    wp_send_json_success(array('results' => $results));
+    wp_send_json_success(array(
+        'results' => $results,
+        'total' => $query->found_posts,
+        'synonym_applied' => ($_POST['search'] !== $search_term) ? $search_term : false
+    ));
 }
 add_action('wp_ajax_konderntang_search_autocomplete', 'konderntang_search_autocomplete');
 add_action('wp_ajax_nopriv_konderntang_search_autocomplete', 'konderntang_search_autocomplete');
